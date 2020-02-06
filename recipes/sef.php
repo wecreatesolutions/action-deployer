@@ -22,23 +22,6 @@ set('deploy_path', '~/deployer');
 
 // endregion
 
-// region hosts
-// region staging
-// region plan4flex.test.are.builders
-host('plan4task.test.are.builders')
-    ->user('plan4ft')
-    ->stage('staging')
-    ->set('sef_env', 'acc_test');
-// endregion
-// region production
-host('portal.plan4task.nl')
-    ->user('kpuitzennl')
-    ->stage('staging') //->stage('production')
-    ->set('sef_env', 'prod_prod');
-// endregion
-// endregion
-// endregion
-
 // region tasks
 after('deploy:failed', 'deploy:unlock');
 
