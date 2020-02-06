@@ -15,6 +15,13 @@ echo "$SSH_PRIVATE_KEY" | tr -d '\r' > /tmp/id_rsa
 chmod 600 /tmp/id_rsa
 ssh-add /tmp/id_rsa
 
+printenv
+
+echo $GITHUB_TOKEN;
+echo $GITHUB_REPOSITORY;
+echo $GITHUB_SHA;
+echo $INPUT_DEPLOYER-FILE-LOCATION;
+
 # download deployer from repository
 curl -sS -H 'Authorization: token '"${GITHUB_TOKEN}"'' --location --request GET 'https://raw.githubusercontent.com/'"${GITHUB_REPOSITORY}"'/'"${GITHUB_SHA}"''"${INPUT_DEPLOYER-FILE-LOCATION}"'' > deploy.php
 
