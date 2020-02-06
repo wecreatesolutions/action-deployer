@@ -12,11 +12,11 @@ RUN apk update --no-cache \
     openssh-client \
     rsync
 
-# Change default shell to bash (needed for conveniently adding an ssh key)
+# ohange default shell to bash (needed for conveniently adding an ssh key)
 RUN sed -i -e "s/bin\/ash/bin\/bash/" /etc/passwd
 
-# Override with custom opcache settings
-COPY config/include.ini $PHP_INI_DIR/conf.d/
+# setting php include path
+COPY config/include_path.ini $PHP_INI_DIR/conf.d/
 
 RUN curl -L https://deployer.org/releases/v$DEPLOYER_VERSION/deployer.phar > /usr/local/bin/deployer \
     && chmod +x /usr/local/bin/deployer
