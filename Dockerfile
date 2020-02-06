@@ -24,8 +24,9 @@ RUN curl -sS --location --request GET 'https://api.github.com/repos/deployphp/re
     && mv deployphp-recipes-*/recipe ./recipes \
     && rm -rf deployphp-recipes-*
 
-# https://github.com/deployphp/deployer/blob/master/src/Support/Unix.php - parseHomeDir use HOME which is overridden by github
+# https://github.com/deployphp/deployer/blob/master/src/Support/Unix.php - parseHomeDir uses HOME which is overridden by github
 RUN mkdir -p /github/home/.ssh/
+RUN chmod 777 -R /github
 
 ADD recipes /deployer/recipes
 
