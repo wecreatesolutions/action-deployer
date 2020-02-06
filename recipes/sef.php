@@ -121,7 +121,7 @@ if ($slackWebhookToken !== null) {
     require 'recipes/slack.php';
 
     set('slack_webhook', $slackWebhookToken);
-    set('slack_text', sprintf('_{{user}}_ deploying `{{branch}}` to *{{target}}*'));
+    set('slack_text', sprintf('_{{user}}_ deploying `{{branch}}` to *{{target}}* - _{{stage}}_'));
 
     before('deploy', 'slack:notify');
     after('success', 'slack:notify:success');

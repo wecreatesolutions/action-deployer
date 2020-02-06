@@ -9,7 +9,7 @@ $revision          = $_ENV['GITHUB_SHA'] ?? null;
 $repositoryName    = $_ENV['GITHUB_REPOSITORY'] ?? null;
 $token             = $_ENV['GITHUB_TOKEN'] ?? null;
 $slackWebhookToken = $_ENV['SLACK_WEBHOOK_TOKEN'] ?? null;
-$githubAuthor      = $_ENV['GITHUB_ACTOR'] ?? null;
+$githubActor       = $_ENV['GITHUB_ACTOR'] ?? null;
 $branch            = $result = preg_replace('%^refs/heads/(.*)%m', '\1', $_ENV['GITHUB_REF'] ?? '');
 
 if ($token === null) {
@@ -44,7 +44,7 @@ set('default_stage', $stage);
 set('revision', $revision);
 set('branch', $branch);
 set('repository_name', $repositoryName);
-set('user', $githubAuthor);
+set('user', $githubActor);
 set('github_token', $token);
 set('slack_webhook_token', $slackWebhookToken);
 
