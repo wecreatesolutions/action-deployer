@@ -2,6 +2,12 @@
 
 set -e
 
+if [ -z "$1" ]; then
+    CMD_ARGS=""
+else
+    CMD_ARGS="$@"
+fi
+
 eval $(ssh-agent -s)
 
 echo -e "StrictHostKeyChecking no" >> /etc/ssh/ssh_config
@@ -10,4 +16,4 @@ chmod 600 /tmp/id_rsa
 ssh-add /tmp/id_rsa
 
 deployer --version
-deployer deploy
+deployer $CMD_ARGS
