@@ -11,6 +11,9 @@ $token             = $_ENV['GITHUB_TOKEN'] ?? null;
 $slackWebhookToken = $_ENV['SLACK_WEBHOOK_TOKEN'] ?? null;
 $githubAuthor      = $_ENV['GITHUB_ACTOR'] ?? null;
 
+echo $githubAuthor;
+die();
+
 if ($token === null) {
     echo 'Missing GITHUB_TOKEN';
     exit(1);
