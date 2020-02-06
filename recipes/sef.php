@@ -96,6 +96,7 @@ if ($slackWebhookToken !== null) {
     echo get('user');
     die();
 
+
     set('slack_webhook', $slackWebhookToken);
     before('deploy', 'slack:notify');
     after('success', 'slack:notify:success');
