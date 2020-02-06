@@ -86,4 +86,13 @@ task(
         'success',
     ]
 );
+
+// @see https://deployer.org/recipes/slack.html
+$slackWebhookToken = get('slack_webhook_token', null);
+if ($slackWebhookToken !== null) {
+    require 'recipes/slack.php';
+    set('slack_webhook', $slackWebhookToken);
+    before('deploy', 'slack:notify');
+    after('success', 'slack:notify:success');
+}
 // endregion
