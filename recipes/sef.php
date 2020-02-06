@@ -91,6 +91,11 @@ task(
 $slackWebhookToken = get('slack_webhook_token', null);
 if ($slackWebhookToken !== null) {
     require 'recipes/slack.php';
+
+    print_r($_ENV);
+    echo get('user');
+    die();
+
     set('slack_webhook', $slackWebhookToken);
     before('deploy', 'slack:notify');
     after('success', 'slack:notify:success');
