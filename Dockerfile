@@ -24,12 +24,12 @@ RUN curl -sS --location --request GET 'https://api.github.com/repos/deployphp/re
     && mv deployphp-recipes-*/recipe ./recipes \
     && rm -rf deployphp-recipes-*
 
-ADD recipes /recipes
+ADD recipes /deployer/recipes
 
 # Copies your code file from your action repository to the filesystem path `/` of the container
 COPY entrypoint.sh /entrypoint.sh
 
-#COPY test.php /test.php
+COPY test.php /test/test.php
 
 RUN chmod +x /entrypoint.sh
 
