@@ -24,6 +24,7 @@ RUN curl -L https://deployer.org/releases/v$DEPLOYER_VERSION/deployer.phar > /us
 RUN curl -sS --location --request GET 'https://api.github.com/repos/deployphp/recipes/tarball/'$DEPLOYER_RECIPES_VERSION > recipes.tar.gz \
     && tar -xvf recipes.tar.gz \
     && rm recipes.tar.gz \
+    && mkdir ./deployer \
     && mv deployphp-recipes-*/recipe ./deployer/recipes \
     && rm -rf deployphp-recipes-*
 
