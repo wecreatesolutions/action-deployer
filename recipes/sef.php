@@ -27,7 +27,7 @@ set(
                 $sefEnv = 'acc_test';
                 break;
             case 'production':
-                $sefEnv = 'production';
+                $sefEnv = 'prod_prod';
                 break;
             default:
                 echo 'Unable to determine sef environment';
