@@ -29,3 +29,7 @@ set('revision', $revision);
 set('repository_name', $repositoryName);
 set('github_token', $token);
 set('slack_webhook_token', $slackWebhookToken);
+
+
+// clear HOME
+unset($_SERVER['HOME']);
