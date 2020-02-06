@@ -19,4 +19,6 @@ ssh-add /tmp/id_rsa
 curl -sS -H 'Authorization: token '\"${GITHUB_TOKEN}\"'' --location --request GET 'https://raw.githubusercontent.com/'\"${GITHUB_REPOSITORY}\"'/'\"${GITHUB_SHA}\"''\"${INPUT_DEPLOYER-FILE-LOCATION}\"'' > deploy.php
 
 deployer --version
-deployer --file=./deploy.php -v deploy
+#deployer --file=./deploy.php -v deploy
+
+cat ./deploy.php
