@@ -40,6 +40,7 @@ if (in_array($branch, ['production', 'master'])) {
 // endregion
 
 // set configuration
+writeln(sprintf('Deployment target is <info>%1$s</info>', $stage));
 set('default_stage', $stage);
 set('revision', $revision);
 set('branch', $branch);
