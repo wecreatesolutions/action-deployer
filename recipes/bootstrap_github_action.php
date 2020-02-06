@@ -10,6 +10,7 @@ $repositoryName    = $_ENV['GITHUB_REPOSITORY'] ?? null;
 $token             = $_ENV['GITHUB_TOKEN'] ?? null;
 $slackWebhookToken = $_ENV['SLACK_WEBHOOK_TOKEN'] ?? null;
 $githubAuthor      = $_ENV['GITHUB_ACTOR'] ?? null;
+$branch            = $result = preg_replace('%^refs/heads/(.*)%m', '\1', $_ENV['GITHUB_REF'] ?? '');
 
 if ($token === null) {
     echo 'Missing GITHUB_TOKEN';
@@ -27,6 +28,7 @@ if ($repositoryName === null) {
 
 // set configuration
 set('revision', $revision);
+set('branch', $revision);
 set('repository_name', $repositoryName);
 set('user', $githubAuthor);
 set('github_token', $token);

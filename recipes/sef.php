@@ -92,11 +92,8 @@ $slackWebhookToken = get('slack_webhook_token', null);
 if ($slackWebhookToken !== null) {
     require 'recipes/slack.php';
 
-    $what = $_ENV['GITHUB_REF'] ?? $_ENV['GITHUB_SHA'] ?? '';
-    $user = get('user');
-
     set('slack_webhook', $slackWebhookToken);
-    set('slack_text', sprintf('_{{user}}_ _%1$s_ deploying `%2$s` to *{{target}}*', $user, $what));
+    set('slack_text', sprintf('_{{user}}_ deploying `{{branch}}` to *{{target}}*'));
 
     before('deploy', 'slack:notify');
     after('success', 'slack:notify:success');
