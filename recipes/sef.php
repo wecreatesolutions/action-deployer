@@ -68,7 +68,7 @@ task(
 task(
     'deploy:info-stage',
     function () {
-        writeln(sprintf('Deployment target is <info>%1$s</info>', get('stage')));
+        writeln('Deployment target is <info>{{stage}}</info>');
     }
 );
 
