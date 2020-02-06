@@ -2,7 +2,7 @@
 
 namespace Deployer;
 
-require_once __DIR__ . '/common.php';
+require 'recipe/common.php';
 
 // region environment
 $revision          = $_ENV['GITHUB_SHA'] ?? null;

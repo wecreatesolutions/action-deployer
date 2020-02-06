@@ -12,6 +12,9 @@ RUN apk update --no-cache \
 # Change default shell to bash (needed for conveniently adding an ssh key)
 RUN sed -i -e "s/bin\/ash/bin\/bash/" /etc/passwd
 
+# Override with custom opcache settings
+COPY config/include.ini $PHP_INI_DIR/conf.d/
+
 RUN curl -L https://deployer.org/releases/v6.5.0/deployer.phar > /usr/local/bin/deployer \
     && chmod +x /usr/local/bin/deployer
 
@@ -25,6 +28,8 @@ ADD recipes /recipes
 
 # Copies your code file from your action repository to the filesystem path `/` of the container
 COPY entrypoint.sh /entrypoint.sh
+
+#COPY test.php /test.php
 
 RUN chmod +x /entrypoint.sh
 
