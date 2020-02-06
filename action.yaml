@@ -6,7 +6,6 @@ inputs:
     description: 'Path of the deployer file in repository'
     required: true
     default: '/.deployment/deploy.php'
-
 runs:
   using: 'docker'
   image: 'Dockerfile'

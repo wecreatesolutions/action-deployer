@@ -29,6 +29,4 @@ echo 'https://raw.githubusercontent.com/'"${GITHUB_REPOSITORY}"'/'"${GITHUB_SHA}
 curl -sS -H 'Authorization: token '"${GITHUB_TOKEN}"'' --location --request GET 'https://raw.githubusercontent.com/'"${GITHUB_REPOSITORY}"'/'"${GITHUB_SHA}"''"${INPUT_DEPLOYERFILELOCATION}"'' > deploy.php
 
 deployer --version
-#deployer --file=./deploy.php -v deploy
-
-cat ./deploy.php
+deployer --file=./deploy.php -v deploy
