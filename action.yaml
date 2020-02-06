@@ -1,11 +1,12 @@
 # action.yml
 name: 'Github action deployer'
 description: 'Runs deployer deploy'
-#inputs:
-#  deployer-args:  # id of input
-#    description: 'Arguments for deployer'
-#    required: true
-#    default: '--file=./deploy.php -vvv deploy staging'
+inputs:
+  deployer-file-location:  # id of input
+    description: 'Path of the deployer file in repository'
+    required: true
+    default: '/.deployment/deploy.php'
+
 runs:
   using: 'docker'
   image: 'Dockerfile'
