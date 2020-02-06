@@ -16,7 +16,7 @@ chmod 600 /tmp/id_rsa
 ssh-add /tmp/id_rsa
 
 # download deployer from repository
-curl -sS -H 'Authorization: token ${GITHUB_TOKEN}' --location --request GET 'https://raw.githubusercontent.com/'\"${GITHUB_REPOSITORY}\"'/'\"${GITHUB_SHA}\"''\"${INPUT_DEPLOYER-FILE-LOCATION}\"'' > deploy.php
+curl -sS -H 'Authorization: token '\"${GITHUB_TOKEN}\"'' --location --request GET 'https://raw.githubusercontent.com/'\"${GITHUB_REPOSITORY}\"'/'\"${GITHUB_SHA}\"''\"${INPUT_DEPLOYER-FILE-LOCATION}\"'' > deploy.php
 
 deployer --version
 deployer--file=./deploy.php -v deploy
