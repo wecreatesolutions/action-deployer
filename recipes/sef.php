@@ -21,7 +21,8 @@ set('deploy_path', '~/deployer');
 set(
     'sef_env',
     function () {
-        switch (get('stage')) {
+        $stage = get('stage') ?? get('default_stage');
+        switch ($stage) {
             case 'staging':
                 $sefEnv = 'acc_test';
                 break;
