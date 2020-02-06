@@ -15,7 +15,7 @@ RUN sed -i -e "s/bin\/ash/bin\/bash/" /etc/passwd
 # Override with custom opcache settings
 COPY config/include.ini $PHP_INI_DIR/conf.d/
 
-RUN curl -L https://deployer.org/releases/v6.5.0/deployer.phar > /usr/local/bin/deployer \
+RUN curl -L https://deployer.org/releases/v6.6.0/deployer.phar > /usr/local/bin/deployer \
     && chmod +x /usr/local/bin/deployer
 
 RUN curl -sS --location --request GET 'https://api.github.com/repos/deployphp/recipes/tarball/6.2.2' > recipes.tar.gz \
