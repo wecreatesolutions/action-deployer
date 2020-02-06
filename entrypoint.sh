@@ -20,10 +20,10 @@ printenv
 echo $GITHUB_TOKEN;
 echo $GITHUB_REPOSITORY;
 echo $GITHUB_SHA;
-echo $INPUT_DEPLOYER_FILE_LOCATION;
+echo $INPUT_DEPLOYERFILELOCATION;
 
 # download deployer from repository
-curl -sS -H 'Authorization: token '"${GITHUB_TOKEN}"'' --location --request GET 'https://raw.githubusercontent.com/'"${GITHUB_REPOSITORY}"'/'"${GITHUB_SHA}"''"${INPUT_DEPLOYER_FILE_LOCATION}"'' > deploy.php
+curl -sS -H 'Authorization: token '"${GITHUB_TOKEN}"'' --location --request GET 'https://raw.githubusercontent.com/'"${GITHUB_REPOSITORY}"'/'"${GITHUB_SHA}"''"${INPUT_DEPLOYERFILELOCATION}"'' > deploy.php
 
 deployer --version
 #deployer --file=./deploy.php -v deploy
