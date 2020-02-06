@@ -58,6 +58,8 @@ task(
 task(
     'composer-sef-deploy',
     function () {
+        writeln(sprintf('Deployment target is <info>%1$s</info>', get('stage')));
+
         // make env configurable
         $sefEnv = get('sef_env', 'xxx');
         $result = run('cd {{release_path}} && {{bin/composer}} sef-deploy -- ' . $sefEnv);
