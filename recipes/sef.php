@@ -65,8 +65,8 @@ task(
     }
 );
 
-before(
-    'deploy:info',
+task(
+    'deploy:info-stage',
     function () {
         writeln(sprintf('Deployment target is <info>%1$s</info>', get('stage')));
     }
@@ -75,6 +75,7 @@ before(
 task(
     'deploy',
     [
+        'deploy:info-stage',
         'deploy:info',
         'deploy:prepare',
         'deploy:lock',
