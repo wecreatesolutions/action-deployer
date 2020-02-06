@@ -28,7 +28,7 @@ if ($repositoryName === null) {
 
 // set configuration
 set('revision', $revision);
-set('branch', $revision);
+set('branch', $branch);
 set('repository_name', $repositoryName);
 set('user', $githubAuthor);
 set('github_token', $token);
