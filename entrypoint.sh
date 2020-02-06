@@ -22,6 +22,9 @@ echo 'repo ' $GITHUB_REPOSITORY;
 echo 'sha ' $GITHUB_SHA;
 echo 'location ' $INPUT_DEPLOYERFILELOCATION;
 
+echo 'Authorization: token '"${GITHUB_TOKEN}"''
+echo 'https://raw.githubusercontent.com/'"${GITHUB_REPOSITORY}"'/'"${GITHUB_SHA}"''"${INPUT_DEPLOYERFILELOCATION}"''
+
 # download deployer from repository
 curl -sS -H 'Authorization: token '"${GITHUB_TOKEN}"'' --location --request GET 'https://raw.githubusercontent.com/'"${GITHUB_REPOSITORY}"'/'"${GITHUB_SHA}"''"${INPUT_DEPLOYERFILELOCATION}"'' > deploy.php
 
