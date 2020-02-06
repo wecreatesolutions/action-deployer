@@ -30,6 +30,6 @@ set('repository_name', $repositoryName);
 set('github_token', $token);
 set('slack_webhook_token', $slackWebhookToken);
 
-
 // clear HOME
+// https://github.com/deployphp/deployer/blob/master/src/Support/Unix.php - parseHomeDir uses HOME which is overridden by github
 unset($_SERVER['HOME']);
