@@ -4,9 +4,6 @@ namespace Deployer;
 
 require_once __DIR__ . '/bootstrap_github_action.php';
 
-// region setup configuration
-set('default_stage', 'staging');
-
 // ahared files/dirs between deploys
 set('shared_files', []);
 set('shared_dirs', []);

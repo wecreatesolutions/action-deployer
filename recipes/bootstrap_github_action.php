@@ -24,9 +24,23 @@ if ($repositoryName === null) {
     echo 'Missing GITHUB_REPOSITORY';
     exit(1);
 }
+if ($branch === '') {
+    echo 'Unable to determine branch';
+    exit(1);
+}
+
+// region determine stage to deploy
+$stage = 'staging';
+if (in_array($branch, ['production', 'master'])) {
+    $stage = 'production';
+}
+// @TODO: when a release is created we also might to deploy to production
+// endregion
+
 // endregion
 
 // set configuration
+set('default_stage', $stage);
 set('revision', $revision);
 set('branch', $branch);
 set('repository_name', $repositoryName);
