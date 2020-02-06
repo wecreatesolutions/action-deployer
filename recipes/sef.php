@@ -17,6 +17,24 @@ set('writable_dirs', []);
 // set deploy path
 set('deploy_path', '~/deployer');
 
+// region sef env
+$sefEnv = get('sef_env');
+if ($sefEnv === null) {
+    switch (get('stage')) {
+        case 'staging':
+            $sefEnv = 'acc_test';
+            break;
+        case 'production':
+            $sefEnv = 'production';
+            break;
+        default:
+            echo 'Unable to determine sef environment';
+            exit(1);
+    }
+    set('sef_env', $sefEnv);
+}
+// endregion
+
 // endregion
 
 // region tasks
@@ -68,7 +86,7 @@ task(
 task(
     'deploy:info-stage',
     function () {
-        writeln('Deployment target is <info>{{stage}}</info>');
+        writeln('Deployment target is <info>{{stage}}</info>, using SEF environment <info>{{sef_env}}</info>');
     }
 );
 
