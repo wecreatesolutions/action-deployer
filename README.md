@@ -1,21 +1,14 @@
-# Hello world docker action
+# Deployer action
 
-This action prints "Hello World" or "Hello" + the name of a person to greet to the log.
+This action handles deployment via deployer
 
-## Inputs
-
-### `who-to-greet`
-
-**Required** The name of the person to greet. Default `"World"`.
-
-## Outputs
-
-### `time`
-
-The time we greeted you.
-
-## Example usage
-
-uses: actions/hello-world-docker-action@v1
-with:
-  who-to-greet: 'Mona the Octocat'
+```
+  - name: Deploy
+    uses: wearebuilders/action-deployer@master
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SLACK_WEBHOOK_TOKEN: ${{ secrets.SLACK_WEBHOOK_TOKEN }}
+    with:
+      args: --file=./deploy.php -v deploy
+```
