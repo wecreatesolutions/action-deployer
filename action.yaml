@@ -1,13 +1,13 @@
 # action.yml
 name: 'Github action deployer'
 description: 'Runs deployer deploy'
-inputs:
-  deployer-args:  # id of input
-    description: 'Arguments for deployer'
-    required: true
-    default: '--file=./deploy.php -vvv deploy staging'
+#inputs:
+#  deployer-args:  # id of input
+#    description: 'Arguments for deployer'
+#    required: true
+#    default: '--file=./deploy.php -vvv deploy staging'
 runs:
   using: 'docker'
   image: 'Dockerfile'
-  args:
-    - ${{ inputs.deployer-args }}
+#  args:
+#    - ${{ inputs.deployer-args }}
