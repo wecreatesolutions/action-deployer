@@ -2,12 +2,6 @@
 
 set -e
 
-if [ -z "$1" ]; then
-    CMD_ARGS=""
-else
-    CMD_ARGS="$@"
-fi
-
 eval $(ssh-agent -s)
 
 echo -e "StrictHostKeyChecking no" >> /etc/ssh/ssh_config
