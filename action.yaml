@@ -4,7 +4,7 @@ description: 'Runs deployer deploy'
 inputs:
   deployerFileLocation:  # id of input
     description: 'Path of the deployer file in repository'
-    required: true
+    required: false
     default: '.deployment/deploy.php'
 runs:
   using: 'docker'
