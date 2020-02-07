@@ -9,6 +9,4 @@ This action handles deployment via deployer
       SSH_PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       SLACK_WEBHOOK_TOKEN: ${{ secrets.SLACK_WEBHOOK_TOKEN }}
-    with:
-      args: --file=./deploy.php -v deploy
 ```
