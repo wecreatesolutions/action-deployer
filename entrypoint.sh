@@ -29,5 +29,7 @@ curl -sS -H 'Authorization: token '"${GITHUB_TOKEN}"'' --location --request GET 
 # forces coloring
 export ANSICON=1
 
+printf "\033[32;1m%s \033[0m\033[34;1m%s \033[0m\033[90;1m%s\033[0m\n" "✓" "subject" "message"
+
 deployer --version
 deployer --file=./deploy.php -$INPUT_VERBOSELEVEL deploy
