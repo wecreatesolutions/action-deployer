@@ -26,12 +26,8 @@ fi
 # download deployer from repository
 curl -sS -H 'Authorization: token '"${GITHUB_TOKEN}"'' --location --request GET 'https://raw.githubusercontent.com/'"${GITHUB_REPOSITORY}"'/'"${GITHUB_SHA}"'/'"${INPUT_DEPLOYERFILELOCATION}"'' > deploy.php
 
-# forces coloring
+# forces coloring - WIP need to find a better solution for this - https://github.com/symfony/console/blob/fb5419f837e0bd960696ebfd143f213dd5c8f744/Output/StreamOutput.php#L100
 export TERM_PROGRAM=Hyper
-
-printenv
-
-printf "\033[32;1m%s \033[0m\033[34;1m%s \033[0m\033[90;1m%s\033[0m\n" "✓" "subject" "message"
 
 deployer --version
 deployer --file=./deploy.php -$INPUT_VERBOSELEVEL deploy
