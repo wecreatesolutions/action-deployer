@@ -27,7 +27,9 @@ fi
 curl -sS -H 'Authorization: token '"${GITHUB_TOKEN}"'' --location --request GET 'https://raw.githubusercontent.com/'"${GITHUB_REPOSITORY}"'/'"${GITHUB_SHA}"'/'"${INPUT_DEPLOYERFILELOCATION}"'' > deploy.php
 
 # forces coloring
-export ANSICON=1
+export TERM_PROGRAM=Hyper
+
+printenv
 
 printf "\033[32;1m%s \033[0m\033[34;1m%s \033[0m\033[90;1m%s\033[0m\n" "✓" "subject" "message"
 
