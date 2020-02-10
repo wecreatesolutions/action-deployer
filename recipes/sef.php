@@ -46,6 +46,16 @@ set(
 after('deploy:failed', 'deploy:unlock');
 
 task(
+    'deploy:update_code',
+    [
+        'download-revision',
+        'extract-revision',
+        'deploy:copy_dirs',
+        'create-private-html-symlink',
+    ]
+);
+
+task(
     'download-revision',
     function () {
 
@@ -81,9 +91,14 @@ task(
 task(
     'composer-sef-deploy',
     function () {
-        // make env configurable
-        $sefEnv = get('sef_env', 'xxx');
-        $result = run('cd {{release_path}} && {{bin/composer}} sef-deploy -- ' . $sefEnv);
+        $arguments = [get('sef_env', 'xxx')];
+        $roles     = has('roles') ? get('roles') : null;
+        if (is_array($roles) && in_array('batch', $roles)) {
+            $arguments[] = '--no-migration';
+        }
+        $cmd = 'cd {{release_path}} && {{bin/composer}} sef-deploy -- ' . implode(' ', $arguments);
+
+        $result = run($cmd);
         writeln($result);
     }
 );
@@ -103,10 +118,7 @@ task(
         'deploy:prepare',
         'deploy:lock',
         'deploy:release',
-        'download-revision',
-        'extract-revision',
-        'deploy:copy_dirs',
-        'create-private-html-symlink',
+        'deploy:update_code',
         'composer-sef-deploy',
         'deploy:symlink',
         'deploy:unlock',
@@ -125,5 +137,6 @@ if ($slackWebhookToken !== null) {
 
     before('deploy', 'slack:notify');
     after('success', 'slack:notify:success');
+    after('deploy:failed', 'slack:notify:failure');
 }
 // endregion

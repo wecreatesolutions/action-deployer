@@ -26,5 +26,8 @@ fi
 # download deployer from repository
 curl -sS -H 'Authorization: token '"${GITHUB_TOKEN}"'' --location --request GET 'https://raw.githubusercontent.com/'"${GITHUB_REPOSITORY}"'/'"${GITHUB_SHA}"'/'"${INPUT_DEPLOYERFILELOCATION}"'' > deploy.php
 
+# forces coloring
+export ANSICON=1
+
 deployer --version
 deployer --file=./deploy.php -$INPUT_VERBOSELEVEL deploy
