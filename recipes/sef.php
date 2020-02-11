@@ -2,6 +2,8 @@
 
 namespace Deployer;
 
+use Utils\ProjectUtils;
+
 require_once __DIR__ . '/bootstrap_github_action.php';
 
 // ahared files/dirs between deploys
@@ -16,6 +18,20 @@ set('writable_dirs', []);
 
 // set deploy path
 set('deploy_path', '~/deployer');
+
+// sef app version
+set(
+    'app_version',
+    function () {
+
+        $cmd    = "curl -sS -H 'Authorization: token {{github_token}}' --location --request GET 'https://raw.githubusercontent.com/{{repository_name}}/{{revision}}/application/config/application/Config.php'";
+        $config = runLocally($cmd);
+
+        $projectUtils = new ProjectUtils();
+
+        return $projectUtils->parseAppVersion(ProjectUtils::APP_TYPE_SEF, $config);;
+    }
+);
 
 // region sef env
 set(
@@ -106,7 +122,7 @@ task(
 task(
     'deploy:info-stage',
     function () {
-        writeln('Deployment target is <info>{{stage}}</info>, using SEF environment <info>{{sef_env}}</info>');
+        writeln('Deployment target is <info>{{stage}}</info>, using SEF environment <info>{{sef_env}}</info>, deploying app version <info>{{app_version}}</info>');
     }
 );
 
@@ -119,6 +135,7 @@ task(
         'deploy:lock',
         'deploy:release',
         'deploy:update_code',
+        'composer-set-auth',
         'composer-sef-deploy',
         'deploy:symlink',
         'deploy:unlock',
@@ -127,16 +144,9 @@ task(
     ]
 );
 
-// @see https://deployer.org/recipes/slack.html
 $slackWebhookToken = get('slack_webhook_token', null);
 if ($slackWebhookToken !== null) {
-    require 'recipes/slack.php';
-
-    set('slack_webhook', $slackWebhookToken);
-    set('slack_text', sprintf('_{{user}}_ deploying `{{branch}}` to *{{target}}* - _{{stage}}_'));
-
     before('deploy', 'slack:notify');
-    after('success', 'slack:notify:success');
-    after('deploy:failed', 'slack:notify:failure');
 }
+
 // endregion

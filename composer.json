@@ -1,0 +1,23 @@
+{
+  "name": "wearebuilders/action-deployer",
+  "description": "QA test",
+  "license": "proprietary",
+  "require": {
+    "php": ">=7.2.0",
+    "deployer/recipes": "^6.2",
+    "symfony/yaml": "^4.4"
+  },
+  "minimum-stability": "stable",
+  "config": {
+    "sort-packages": true,
+    "bin-dir": "bin",
+    "platform": {
+      "php": "7.2"
+    }
+  },
+  "autoload": {
+    "psr-4": {
+      "Utils\\": "Utils"
+    }
+  }
+}
