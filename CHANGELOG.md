@@ -1,3 +1,7 @@
+# v0.0.5
+* Added functionality to create a release
+* Added functionality to set composer authentication
+
 # v0.0.4
 * Added failure slack message
 * Added supported role batch - will not run migration

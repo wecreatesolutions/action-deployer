@@ -19,19 +19,18 @@ set('writable_dirs', []);
 // set deploy path
 set('deploy_path', '~/deployer');
 
-// sef app version
+// region sef app version
 set(
     'app_version',
     function () {
 
-        $cmd    = "curl -sS -H 'Authorization: token {{github_token}}' --location --request GET 'https://raw.githubusercontent.com/{{repository_name}}/{{revision}}/application/config/application/Config.php'";
-        $config = runLocally($cmd);
+        $cmd            = "curl -sS -H 'Authorization: token {{github_token}}' --location --request GET 'https://raw.githubusercontent.com/{{repository_name}}/{{revision}}/application/config/application/Config.php'";
+        $configContents = runLocally($cmd);
 
-        $projectUtils = new ProjectUtils();
-
-        return $projectUtils->parseAppVersion(ProjectUtils::APP_TYPE_SEF, $config);;
+        return (new ProjectUtils())->parseAppVersion(ProjectUtils::APP_TYPE_SEF, $configContents);
     }
 );
+// endregion
 
 // region sef env
 set(
@@ -61,6 +60,7 @@ set(
 // region tasks
 after('deploy:failed', 'deploy:unlock');
 
+desc('Update SEF code');
 task(
     'deploy:update_code',
     [
@@ -71,6 +71,7 @@ task(
     ]
 );
 
+desc('Download revision tar');
 task(
     'download-revision',
     function () {
@@ -83,6 +84,7 @@ task(
     }
 );
 
+desc('Extract downloaded revision tar');
 task(
     'extract-revision',
     function () {
@@ -97,6 +99,7 @@ task(
     }
 );
 
+desc('Set required symlink for private-html, used for https');
 task(
     'create-private-html-symlink',
     function () {
@@ -104,6 +107,7 @@ task(
     }
 );
 
+desc('Running deployment scripts for SEF');
 task(
     'composer-sef-deploy',
     function () {
@@ -119,6 +123,7 @@ task(
     }
 );
 
+desc('Display additional info');
 task(
     'deploy:info-stage',
     function () {
