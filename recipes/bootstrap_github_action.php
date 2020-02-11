@@ -142,7 +142,9 @@ task(
             // endregion
         }
     }
-);
+)->once()
+ ->shallow()
+ ->setPrivate();
 
 after('success', 'github:create-release');
 
