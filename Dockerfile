@@ -29,6 +29,7 @@ RUN curl -L https://deployer.org/releases/v$DEPLOYER_VERSION/deployer.phar > /us
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer
 
 ADD recipes /deployer/recipes
+ADD Utils /Utils
 
 COPY composer.json composer.json
 COPY composer.lock composer.lock
