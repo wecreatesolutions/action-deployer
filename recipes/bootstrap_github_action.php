@@ -127,17 +127,6 @@ task(
 
                 $url  = $result['html_url'];
                 $name = $result['name'];
-//                $user = get('user', 'unknown');
-
-//                $attachment = [
-//                    'title'      => 'Release created',
-//                    "title_link" => $url,
-//                    'text'       => sprintf('_%1$s_ created release `%2$s`', $user, $name),
-//                    'color'      => get('slack_success_color'),
-//                    'mrkdwn_in'  => ['text'],
-//                ];
-//
-//                Httpie::post(get('slack_webhook'))->body(['attachments' => [$attachment]])->send();
 
                 set('slack_success_text', sprintf('Deployment to *{{target}}* with version `%1$s` successful - see <%2$s|release>', $name, $url));
             }
@@ -156,7 +145,7 @@ if ($slackWebhookToken !== null) {
     require 'recipe/slack.php';
 
     set('slack_webhook', $slackWebhookToken);
-    set('slack_text', sprintf('_{{user}}_ deploying `{{branch}}` to *{{target}}* - _{{stage}}_'));
+    set('slack_text', sprintf('_{{user}}_ deploying `{{branch}}` with version `{{app_version}}` to *{{target}}* - _{{stage}}_'));
 
     after('success', 'slack:notify:success');
     after('deploy:failed', 'slack:notify:failure');
