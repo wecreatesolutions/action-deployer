@@ -139,7 +139,7 @@ task(
 //
 //                Httpie::post(get('slack_webhook'))->body(['attachments' => [$attachment]])->send();
 
-                set('slack_success_text', sprintf('Deployment to *{{target}}* with version `%1$s` successful - see [release](%2$s)', $name, $url));
+                set('slack_success_text', sprintf('Deployment to *{{target}}* with version `%1$s` successful - see <%2$s|release>', $name, $url));
             }
             // endregion
         }
