@@ -204,8 +204,7 @@ task(
             // endregion
         }
     }
-)->once()
- ->shallow();
+)->once();
 
 after('success', 'github:create-release');
 
