@@ -2,6 +2,8 @@
 
 namespace Deployer;
 
+use Utils\ProjectUtils;
+
 require_once __DIR__ . '/bootstrap_github_action.php';
 
 require 'recipe/symfony4.php';
