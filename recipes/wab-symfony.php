@@ -6,6 +6,9 @@ require_once __DIR__ . '/bootstrap_github_action.php';
 
 require 'recipe/symfony4.php';
 
+// copy the vendor from the previous release to speed up composer install
+set('copy_dirs', ['vendor']);
+
 // region sf4 app version
 set(
     'app_version',
