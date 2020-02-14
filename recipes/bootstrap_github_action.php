@@ -205,8 +205,7 @@ task(
         }
     }
 )->once()
- ->shallow()
- ->setPrivate();
+ ->shallow();
 
 after('success', 'github:create-release');
 
