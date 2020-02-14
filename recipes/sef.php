@@ -58,55 +58,6 @@ set(
 // endregion
 
 // region tasks
-after('deploy:failed', 'deploy:unlock');
-
-desc('Update SEF code');
-task(
-    'deploy:update_code',
-    [
-        'download-revision',
-        'extract-revision',
-        'deploy:copy_dirs',
-        'create-private-html-symlink',
-    ]
-);
-
-desc('Download revision tar');
-task(
-    'download-revision',
-    function () {
-
-        $repositoryName = get('repository_name', 'xxx');
-        $revision       = get('revision', 'xxx');
-        $token          = get('github_token', 'xxx');
-
-        run("cd {{release_path}} && curl -sS -H 'Authorization: token $token' --location --request GET 'https://api.github.com/repos/$repositoryName/tarball/$revision' > repo.tar.gz");
-    }
-);
-
-desc('Extract downloaded revision tar');
-task(
-    'extract-revision',
-    function () {
-        $repositoryName = get('repository_name', 'xxx');
-        $revision       = get('revision', 'xxx');
-
-        $directionName = str_replace('/', '-', $repositoryName) . '-' . $revision . '/';
-        run("cd {{release_path}} && tar -xvf repo.tar.gz  $directionName");
-        run("cd {{release_path}} && mv $directionName* .");
-        run("cd {{release_path}} && rm -rf $directionName");
-        run("cd {{release_path}} && rm repo.tar.gz");
-    }
-);
-
-desc('Set required symlink for private-html, used for https');
-task(
-    'create-private-html-symlink',
-    function () {
-        run("cd {{release_path}} && ln -s public_html private_html");
-    }
-);
-
 desc('Running deployment scripts for SEF');
 task(
     'composer-sef-deploy',

@@ -39,7 +39,6 @@ $stage = 'staging';
 if (in_array($branch, ['production', 'master'])) {
     $stage = 'production';
 }
-// @TODO: when a release is created we also might to deploy to production
 // endregion
 
 // endregion
@@ -89,11 +88,68 @@ set(
     }
 );
 
+// default was acl - but not enabled by ips containers
+set('writable_mode', 'chmod');
+
+// set deploy path
+set('deploy_path', '~/deployer');
+
 // clear HOME
 // https://github.com/deployphp/deployer/blob/master/src/Support/Unix.php - parseHomeDir uses HOME which is overridden by github
 unset($_SERVER['HOME']);
 
 // region tasks
+
+// unlock after failure
+after('deploy:failed', 'deploy:unlock');
+
+desc('Update code - note: this overrides default deployer deploy:update_code');
+task(
+    'deploy:update_code',
+    [
+        'download-revision',
+        'extract-revision',
+        'deploy:copy_dirs',
+        'create-private-html-symlink',
+    ]
+);
+
+desc('Download revision tar');
+task(
+    'download-revision',
+    function () {
+
+        $repositoryName = get('repository_name', 'xxx');
+        $revision       = get('revision', 'xxx');
+        $token          = get('github_token', 'xxx');
+
+        run("cd {{release_path}} && curl -sS -H 'Authorization: token $token' --location --request GET 'https://api.github.com/repos/$repositoryName/tarball/$revision' > repo.tar.gz");
+    }
+);
+
+desc('Extract downloaded revision tar');
+task(
+    'extract-revision',
+    function () {
+        $repositoryName = get('repository_name', 'xxx');
+        $revision       = get('revision', 'xxx');
+
+        $directionName = str_replace('/', '-', $repositoryName) . '-' . $revision . '/';
+        run("cd {{release_path}} && tar -xvf repo.tar.gz  $directionName");
+        run("cd {{release_path}} && (mv $directionName{*,.[^.]*,..?*} . 2>/dev/null || true)"); // move all files included dot files (when a project does not have dot files ignore error
+        run("cd {{release_path}} && rm -rf $directionName");
+        run("cd {{release_path}} && rm repo.tar.gz");
+    }
+);
+
+desc('Set required symlink for private-html, used for https');
+task(
+    'create-private-html-symlink',
+    function () {
+        run("cd {{release_path}} && ln -s public_html private_html");
+    }
+);
+
 desc('Setting auth for composer for private packages');
 task(
     'composer-set-auth',
