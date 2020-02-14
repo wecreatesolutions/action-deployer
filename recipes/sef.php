@@ -82,7 +82,6 @@ task(
 task(
     'deploy',
     [
-        'deploy:info-stage',
         'deploy:info',
         'deploy:prepare',
         'deploy:lock',

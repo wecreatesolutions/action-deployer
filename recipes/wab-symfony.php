@@ -30,13 +30,4 @@ before('deploy:vendors', 'composer-set-auth');
 
 // we need to make sure .env are set correctly in SHARED FILES
 before('deploy:symlink', 'database:migrate');
-
-desc('Display additional info');
-task(
-    'deploy:info-stage',
-    function () {
-        writeln('Deployment target is <info>{{stage}}</info> deploying app version <info>{{app_version}}</info>');
-    }
-);
-before('deploy:info', 'deploy:info-stage');
 // endregion

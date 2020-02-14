@@ -222,6 +222,17 @@ if ($slackWebhookToken !== null) {
     before('deploy:info', 'slack:notify');
 }
 
+desc('Display additional info');
+task(
+    'deploy:info-stage',
+    function () {
+        writeln('Deployment target is <info>{{stage}}</info> deploying app version <info>{{app_version}}</info>');
+    }
+)->once()
+ ->shallow()
+ ->setPrivate();
+before('deploy:info', 'deploy:info-stage');
+
 // endregion
 /**
  * Create release
