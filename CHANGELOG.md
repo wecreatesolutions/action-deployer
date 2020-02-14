@@ -1,3 +1,9 @@
+# v0.0.7
+* Added setup permissions
+* Added deploy additional info
+* Added slack notification when deployment starts
+* Display task info when creating github release
+
 # v0.0.6
 * Support for WAB SF4 projects
 * Moved shared tasks from SEF to bootstrap
