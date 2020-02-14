@@ -1,3 +1,9 @@
+# v0.0.6
+* Support for WAB SF4 projects
+* Moved shared tasks from SEF to bootstrap
+* Set write mode to chmod since ACL is enabled default for IPS containers
+* Copy vendor directory for SF
+
 # v0.0.5
 * Added functionality to create a release
 * Added functionality to set composer authentication
