@@ -227,7 +227,7 @@ if ($slackWebhookToken !== null) {
     after('success', 'slack:notify:success');
     after('deploy:failed', 'slack:notify:failure');
 
-    before('deploy', 'slack:notify');
+    before('deploy:info', 'slack:notify');
 }
 
 // endregion
