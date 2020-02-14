@@ -16,9 +16,6 @@ set('copy_dirs', ['vendor']);
 // writable dirs by web server
 set('writable_dirs', []);
 
-// set deploy path
-set('deploy_path', '~/deployer');
-
 // region sef app version
 set(
     'app_version',
@@ -99,10 +96,4 @@ task(
         'success',
     ]
 );
-
-$slackWebhookToken = get('slack_webhook_token', null);
-if ($slackWebhookToken !== null) {
-    before('deploy', 'slack:notify');
-}
-
 // endregion

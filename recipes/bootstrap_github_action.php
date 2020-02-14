@@ -88,6 +88,14 @@ set(
     }
 );
 
+// empty deploy task - used so we can add before deploy in this file
+task(
+    'deploy',
+    function () {
+        writeln('Please configure deploy task...');
+    }
+);
+
 // default was acl - but not enabled by ips containers
 set('writable_mode', 'chmod');
 
@@ -218,6 +226,8 @@ if ($slackWebhookToken !== null) {
 
     after('success', 'slack:notify:success');
     after('deploy:failed', 'slack:notify:failure');
+
+    before('deploy', 'slack:notify');
 }
 
 // endregion
