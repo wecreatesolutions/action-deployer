@@ -88,14 +88,6 @@ set(
     }
 );
 
-// empty deploy task - used so we can add before deploy in this file
-task(
-    'deploy',
-    function () {
-        writeln('Please configure deploy task...');
-    }
-);
-
 // default was acl - but not enabled by ips containers
 set('writable_mode', 'chmod');
 
@@ -194,6 +186,8 @@ task(
     function () {
         $stage = get('stage') ?? get('default_stage');
         if ($stage == 'production') {
+            writeln('Creating new release <info>{{app_version}}</info>...');
+
             $result = createRelease(get('github_token'), get('repository_name'), get('app_version'), get('app_version_changelog'));
 
             if (array_key_exists('html_url', $result)) {
