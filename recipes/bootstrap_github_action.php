@@ -111,6 +111,7 @@ task(
         'extract-revision',
         'deploy:copy_dirs',
         'create-private-html-symlink',
+        'deploy:setup-permissions',
     ]
 );
 
@@ -164,6 +165,18 @@ task(
                 }
             }
         }
+    }
+);
+
+desc('Setup permissions');
+task(
+    'deploy:setup-permissions',
+    function () {
+        // folders
+        run("cd {{release_path}} && find . -type d -not \( -path './awstats*' -o -path './.git*' \) ! -perm 0755 -exec chmod 755 {} \;");
+
+        // files
+        run("cd {{release_path}} && find . -type f -not \( -path './awstats/*' -o -path './logs/*' -o -path './stats/*' -o -path './.git/*' \) ! -perm 0644 -exec chmod 644 {} \;");
     }
 );
 
