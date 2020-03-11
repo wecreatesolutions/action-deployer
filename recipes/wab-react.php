@@ -12,6 +12,8 @@ set(
     'app_version',
     function () {
 
+        // @TODO: we can use the package.json to read the version
+
         $cmd            = "curl -sS -H 'Authorization: token {{github_token}}' --location --request GET 'https://raw.githubusercontent.com/{{repository_name}}/{{revision}}/CHANGELOG.md'";
         $configContents = runLocally($cmd);
         if (preg_match('/^#\s+v?(.*)\s*$/m', $configContents, $matches)) {
@@ -36,8 +38,12 @@ desc('Build');
 task(
     'build',
     function () {
-        run('cd {{release_path}} && yarn install');
-        run('cd {{release_path}} && yarn run build');
+        run('cd {{release_path}} && yarn install --force');
+        run('cd {{release_path}} && chmod 755 -R node_modules/.bin/*');
+        run('cd {{release_path}} && NODE_ENV=production yarn run build');
+
+        // @TODO: some files exists in public_html - so we cannot make a symlink to build
+        run('cd {{release_path}} && cp -rf build/* public_html/');
     }
 );
 
@@ -60,7 +66,7 @@ task(
         'extract-revision',
         'deploy:shared',
         'build',
-        'create-public-html-symlink',
+//        'create-public-html-symlink',
         'deploy:symlink',
         'deploy:unlock',
         'cleanup',

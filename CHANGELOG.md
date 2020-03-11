@@ -1,3 +1,6 @@
+# v0.0.9
+* Altered build process. Also copying build files instead of symlinking
+
 # v0.0.8
 * Added wab-react. Used for apps and react websites 
 
