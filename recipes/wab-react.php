@@ -4,7 +4,7 @@ namespace Deployer;
 
 require 'recipes/bootstrap_github_action.php';
 
-set('shared_files', []);
+set('shared_files', ['.env.local']);
 set('shared_dirs', ['node_modules']); // can be shared, only needed for building
 set('copy_dirs', []);
 set('writable_dirs', []);
@@ -66,7 +66,9 @@ task(
         'extract-revision',
         'deploy:shared',
         'build',
-//        'create-public-html-symlink',
+        // create-public-html-symlink - there are existing files in public_html
+        'create-private-html-symlink',
+        'deploy:setup-permissions',
         'deploy:symlink',
         'deploy:unlock',
         'cleanup',

@@ -1,3 +1,7 @@
+# v0.0.10
+* Added shared .env.local file used for building
+* Added symlink for private_html (used for https)
+
 # v0.0.9
 * Altered build process. Also copying build files instead of symlinking
 
