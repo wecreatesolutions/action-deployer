@@ -4,7 +4,7 @@ namespace Deployer;
 
 require 'recipes/bootstrap_github_action.php';
 
-set('shared_files', ['.env.local']);
+set('shared_files', ['.env.local', '.env']);
 set('shared_dirs', ['node_modules']); // can be shared, only needed for building
 set('copy_dirs', []);
 set('writable_dirs', []);
@@ -41,9 +41,6 @@ task(
         run('cd {{release_path}} && yarn install --force');
         run('cd {{release_path}} && chmod 755 -R node_modules/.bin/*');
         run('cd {{release_path}} && NODE_ENV=production yarn run build');
-
-        // @TODO: some files exists in public_html - so we cannot make a symlink to build
-        run('cd {{release_path}} && cp -rf build/* public_html/');
     }
 );
 
@@ -66,7 +63,7 @@ task(
         'extract-revision',
         'deploy:shared',
         'build',
-        // create-public-html-symlink - there are existing files in public_html
+        'create-public-html-symlink',
         'create-private-html-symlink',
         'deploy:setup-permissions',
         'deploy:symlink',
