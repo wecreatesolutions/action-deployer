@@ -1,3 +1,6 @@
+# v0.0.12
+* Added custom tasks for sf - crobjob scanning and encore build
+
 # v0.0.11
 * Sym-linking the build directory instead of copying
 
