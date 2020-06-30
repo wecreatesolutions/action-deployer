@@ -2,6 +2,10 @@
 name: 'Github action deployer'
 description: 'Runs deployer deploy'
 inputs:
+  VERBOSELEVEL:
+    description: 'level of verbose'
+    required: false
+    default: 'v'
   deployerFileLocation:  # id of input
     description: 'Path of the deployer file in repository'
     required: false
