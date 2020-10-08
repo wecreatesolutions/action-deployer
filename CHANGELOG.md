@@ -1,5 +1,8 @@
-# v0.0.13
+# v0.0.14
 * Added node, npm and yarn to docker
+
+# v0.0.13
+* Add verbose level
 
 # v0.0.12
 * Added custom tasks for sf - crobjob scanning and encore build
