@@ -1,3 +1,9 @@
+# v1.0.0
+* removed node, npm, yarn
+* added make for building docker image
+* added duration in slack message
+* should use pre build docker image
+
 # v0.0.14
 * Added node, npm and yarn to docker
 

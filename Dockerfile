@@ -25,8 +25,8 @@ COPY config/include_path.ini $PHP_INI_DIR/conf.d/
 RUN curl -L https://deployer.org/releases/v$DEPLOYER_VERSION/deployer.phar > /usr/local/bin/deployer \
     && chmod +x /usr/local/bin/deployer
 
-# installing node and npm
-RUN apk add --update nodejs npm yarn
+## installing node and npm
+#RUN apk add --update nodejs npm yarn
 
 # installing composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer
@@ -41,8 +41,10 @@ RUN composer install --optimize-autoloader --no-progress
 
 # Copies your code file from your action repository to the filesystem path `/` of the container
 COPY entrypoint.sh /entrypoint.sh
+COPY deploy.sh /bin/deploy.sh
 
 RUN chmod +x /entrypoint.sh
+RUN chmod +x /bin/deploy.sh
 
 # Code file to execute when the docker container starts up (`entrypoint.sh`)
-ENTRYPOINT ["/entrypoint.sh"]
+#ENTRYPOINT ["/entrypoint.sh"]

@@ -16,6 +16,7 @@ $token             = $_ENV['GITHUB_TOKEN'] ?? null;
 $slackWebhookToken = $_ENV['SLACK_WEBHOOK_TOKEN'] ?? null;
 $githubActor       = $_ENV['GITHUB_ACTOR'] ?? null;
 $branch            = $result = preg_replace('%^refs/heads/(.*)%m', '\1', $_ENV['GITHUB_REF'] ?? '');
+$start             = microtime(true);
 
 if ($token === null) {
     echo 'Missing GITHUB_TOKEN';
@@ -183,7 +184,7 @@ task(
 desc('Create release in github');
 task(
     'github:create-release',
-    function () {
+    function () use ($start) {
         $stage = get('stage') ?? get('default_stage');
         if ($stage == 'production') {
             writeln('Creating new release <info>{{app_version}}</info>...');
@@ -199,7 +200,7 @@ task(
                 $url  = $result['html_url'];
                 $name = $result['name'];
 
-                set('slack_success_text', sprintf('Deployment to *{{target}}* with version `%1$s` successful - see <%2$s|release>', $name, $url));
+                set('slack_success_text', sprintf('Deployment to *{{target}}* with version `%1$s` successful - see <%2$s|release> - {{duration}}', $name, $url));
             }
             // endregion
         }
@@ -207,6 +208,13 @@ task(
 )->once();
 
 after('success', 'github:create-release');
+
+set(
+    'duration',
+    function () use ($start) {
+        return sprintf('%1$.2fs', microtime(true) - $start);
+    }
+);
 
 // @see https://deployer.org/recipes/slack.html
 $slackWebhookToken = get('slack_webhook_token', null);
@@ -220,6 +228,8 @@ if ($slackWebhookToken !== null) {
     after('deploy:failed', 'slack:notify:failure');
 
     before('deploy:info', 'slack:notify');
+
+    set('slack_success_text', 'Deployment to *{{target}}* with version `{{app_version}}` successful - {{duration}}');
 }
 
 desc('Display additional info');
