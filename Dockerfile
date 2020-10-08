@@ -25,6 +25,9 @@ COPY config/include_path.ini $PHP_INI_DIR/conf.d/
 RUN curl -L https://deployer.org/releases/v$DEPLOYER_VERSION/deployer.phar > /usr/local/bin/deployer \
     && chmod +x /usr/local/bin/deployer
 
+# installing node and npm
+RUN apk add --update nodejs npm yarn
+
 # installing composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer
 
