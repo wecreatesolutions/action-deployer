@@ -7,8 +7,13 @@ use Utils\ProjectUtils;
 require_once __DIR__ . '/bootstrap_github_action.php';
 
 // ahared files/dirs between deploys
-set('shared_files', []);
-set('shared_dirs', []);
+set('shared_dirs', [
+    'var/log',
+]);
+
+set('shared_files', [
+    '.env.local',
+]);
 
 // copy dirs
 set('copy_dirs', ['vendor']);
@@ -88,6 +93,7 @@ task(
         'deploy:release',
         'deploy:update_code',
         'composer-set-auth',
+        'deploy:shared',
         'composer-sef-deploy',
         'deploy:symlink',
         'deploy:unlock',

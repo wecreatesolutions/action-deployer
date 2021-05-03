@@ -1,3 +1,6 @@
+# v1.0.2
+* added shared logic for sef projects
+
 # v1.0.0
 * removed node, npm, yarn
 * added make for building docker image
