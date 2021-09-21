@@ -19,14 +19,22 @@ set('shared_files', [
 set('copy_dirs', ['vendor']);
 
 // writable dirs by web server
-set('writable_dirs', []);
+set('writable_dirs', ['var/cache/{{sef_env}}']);
+set('writable_mode', 'chmod');
+set('writable_chmod_mode', '0777');
+
+set('bin/console', '{{bin/php}} {{release_path}}/bin/console');
+set('console_options', function () {
+    return '';
+});
+set('composer_options', '{{composer_action}} --verbose --prefer-dist --no-progress --no-dev --optimize-autoloader'); // removed --no-interaction ~ we like to see more info :)
 
 // region sef app version
 set(
     'app_version',
     function () {
 
-        $cmd            = "curl -sS -H 'Authorization: token {{github_token}}' --location --request GET 'https://raw.githubusercontent.com/{{repository_name}}/{{revision}}/application/config/application/Config.php'";
+        $cmd = "curl -sS -H 'Authorization: token {{github_token}}' --location --request GET 'https://raw.githubusercontent.com/{{repository_name}}/{{revision}}/application/config/application/Config.php'";
         $configContents = runLocally($cmd);
 
         return (new ProjectUtils())->parseAppVersion(ProjectUtils::APP_TYPE_SEF, $configContents);
@@ -41,10 +49,10 @@ set(
         $stage = get('stage') ?? get('default_stage');
         switch ($stage) {
             case 'staging':
-                $sefEnv = 'acc_test';
+                $sefEnv = 'staging';
                 break;
             case 'production':
-                $sefEnv = 'prod_prod';
+                $sefEnv = 'prod';
                 break;
             default:
                 echo 'Unable to determine sef environment';
@@ -60,19 +68,17 @@ set(
 // endregion
 
 // region tasks
-desc('Running deployment scripts for SEF');
+desc('Running migration');
 task(
-    'composer-sef-deploy',
+    'deploy:migrate',
     function () {
-        $arguments = [get('sef_env', 'xxx')];
-        $roles     = has('roles') ? get('roles') : null;
-        if (is_array($roles) && in_array('batch', $roles)) {
-            $arguments[] = '--no-migration';
-        }
-        $cmd = 'cd {{release_path}} && {{bin/composer}} sef-deploy -- ' . implode(' ', $arguments);
+        $roles = has('roles') ? get('roles') : null;
+        if (!is_array($roles) || !in_array('batch', $roles)) {
+            $cmd = 'cd {{release_path}} && {{bin/php}} application/utils/bin/run.php {{sef_env}} migration/migrate';
 
-        $result = run($cmd);
-        writeln($result);
+            $result = run($cmd);
+            writeln($result);
+        }
     }
 );
 
@@ -84,6 +90,17 @@ task(
     }
 );
 
+desc('Clear cache');
+task('deploy:cache:clear', function () {
+    run('cd {{release_path}} && rm -rf var/cache/{{sef_env}}/*');
+});
+
+desc('Warmup cache');
+task('deploy:cache:warmup', function () {
+    $result = run('cd {{release_path}} && {{bin/console}} cache:warmup');
+    writeln($result);
+});
+
 task(
     'deploy',
     [
@@ -94,7 +111,11 @@ task(
         'deploy:update_code',
         'composer-set-auth',
         'deploy:shared',
-        'composer-sef-deploy',
+        'deploy:writable',
+        'deploy:vendors',
+        'deploy:cache:clear',
+        'deploy:cache:warmup',
+        'deploy:migrate',
         'deploy:symlink',
         'deploy:unlock',
         'cleanup',

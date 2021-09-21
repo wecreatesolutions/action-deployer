@@ -1,3 +1,8 @@
+# v1.1.7
+* added ScriptHandler SEF logic to deployer
+* composer install, cache:clear, migration, init cache
+* update deployer to version 6.8.0
+ 
 # v1.0.2
 * added shared logic for sef projects
 

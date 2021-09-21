@@ -3,7 +3,7 @@
 # Container image that runs your code
 FROM php:7.3-cli-alpine
 
-ENV DEPLOYER_VERSION=6.7.3
+ENV DEPLOYER_VERSION=6.8.0
 
 RUN apk update --no-cache \
     && apk add --no-cache \
