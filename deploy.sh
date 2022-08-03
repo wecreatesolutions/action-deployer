@@ -21,6 +21,9 @@ if [ -z "$INPUT_DEPLOYERFILELOCATION" ]; then
 fi
 #endregion
 
+# change DNS
+echo "nameserver 8.8.8.8" > /etc/resolv.conf
+
 # download deployer from repository
 curl -sS -H 'Authorization: token '"${GITHUB_TOKEN}"'' --location --request GET 'https://raw.githubusercontent.com/'"${GITHUB_REPOSITORY}"'/'"${GITHUB_SHA}"'/'"${INPUT_DEPLOYERFILELOCATION}"'' >deploy.php
 

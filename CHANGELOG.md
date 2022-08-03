@@ -1,3 +1,7 @@
+v1.1.20
+* using php 7.4
+* using google dns server
+
 # v1.1.7
 * added ScriptHandler SEF logic to deployer
 * composer install, cache:clear, migration, init cache

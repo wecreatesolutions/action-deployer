@@ -1,7 +1,7 @@
 # used https://github.com/musps/action-deployer-php/ for inspiration
 
 # Container image that runs your code
-FROM php:7.3-cli-alpine
+FROM php:7.4-cli-alpine
 
 ENV DEPLOYER_VERSION=6.8.0
 
@@ -13,7 +13,8 @@ RUN apk update --no-cache \
     wget \
     curl \
     git \
-    zip
+    zip \
+    bind-tools
 
 # ohange default shell to bash (needed for conveniently adding an ssh key)
 RUN sed -i -e "s/bin\/ash/bin\/bash/" /etc/passwd
