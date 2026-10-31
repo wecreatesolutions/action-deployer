@@ -23,7 +23,7 @@ jobs:
     runs-on: self-hosted
 
     container:
-      image: ghcr.io/wecreatesolutions/action-deployer:2.0.4-8.4.27-cli-alpine
+      image: ghcr.io/wecreatesolutions/action-deployer:2.0.5-8.4.27-cli-alpine
 
     steps:
       - name: Deploy

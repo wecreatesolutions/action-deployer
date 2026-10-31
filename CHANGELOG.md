@@ -1,3 +1,7 @@
+# v2.0.5
+* waf: no `deploy:assets-install` (and no assets_install options) anymore: the composer scripts of the project run
+  `assets:install` during deploy:vendors, with `--install-new-ui` for the projects with the new ui
+
 # v2.0.4
 * no `app_env` anymore: APP_ENV comes from the shared .env.local on the server (like Symfony), the deploy log shows
   it; writable_dirs `var/cache` + `var/log`, cache clear `var/cache/*`, `dotenv:dump` without env

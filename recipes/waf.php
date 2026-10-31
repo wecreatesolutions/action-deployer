@@ -15,10 +15,6 @@ use Utils\ProjectUtils;
  *   host('keyplan-batch.prod.wecreatesolutions.nl')->setLabels(['stage' => 'production', 'role' => 'batch'])->...;
  *
  * Options (set() in the project deploy.php), next to the ones of recipes/wcs.php:
- * - assets_install             (default true)  `assets:install` before the frontend build (the webpack entries live
- *                                              in the generated _assets/)
- * - assets_install_options     (default '--install-new-ui --always-copy-assets') copies instead of symlinks: needed
- *                                              for Encore 6, with Encore 7 '--install-new-ui' is enough
  * - dotenv_dump                (default false) true runs `dotenv:dump` after the vendors
  * - messenger_setup_transports (default: true when messenger_systemd_unit is set) messenger:setup-transports after
  *                                              the migration (the transport DSN only auto-creates the table in dev)
@@ -26,6 +22,8 @@ use Utils\ProjectUtils;
  * - messenger_restart_roles    (default [])    only restart the consumers on hosts with one of these role labels, e.g. ['batch']
  *
  * The migration runs on one host only: hosts with role label `batch` skip it.
+ * assets:install is not part of the recipe: the composer scripts of the project run it during deploy:vendors
+ * (`post-install-cmd` / `auto-scripts-waf`, with `--install-new-ui` for projects with the new ui).
  */
 
 require_once __DIR__ . '/bootstrap_github_action.php';
@@ -53,8 +51,6 @@ set('console_options', function () {
 });
 set('composer_options', '--verbose --prefer-dist --no-progress --no-dev --optimize-autoloader'); // removed --no-interaction ~ we like to see more info :) - Deployer 7+ adds {{composer_action}} itself
 
-set('assets_install', true);
-set('assets_install_options', '--install-new-ui --always-copy-assets');
 set('dotenv_dump', false);
 set('messenger_systemd_unit', null);
 set('messenger_setup_transports', function () {
@@ -117,15 +113,6 @@ desc('Warmup cache');
 task('deploy:cache:warmup', function () {
     run('cd {{release_path}} && {{bin/console}} cache:warmup');
 });
-
-// the webpack entries live in the generated _assets/, so install the waf assets before the frontend build
-desc('Install the waf assets');
-task('deploy:assets-install', function () {
-    if (get('assets_install') && frontendBuildOnHost()) {
-        run('cd {{release_path}} && {{bin/console}} assets:install {{assets_install_options}}');
-    }
-});
-before('deploy:build-frontend', 'deploy:assets-install');
 
 desc('Dump env');
 task('deploy:dump-env', function () {
