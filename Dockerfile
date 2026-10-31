@@ -3,6 +3,9 @@
 # Container image that runs your code
 FROM php:8.4.27-cli-alpine
 
+# links the ghcr.io package to this repository
+LABEL org.opencontainers.image.source=https://github.com/wecreatesolutions/action-deployer
+
 ENV DEPLOYER_VERSION=8.0.5
 
 RUN apk update --no-cache \
