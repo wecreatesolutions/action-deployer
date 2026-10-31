@@ -1,6 +1,8 @@
 # v2.0.5
-* waf: no `deploy:assets-install` (and no assets_install options) anymore: the composer scripts of the project run
-  `assets:install` during deploy:vendors, with `--install-new-ui` for the projects with the new ui
+* waf: option `new_ui` (default false) replaces assets_install / assets_install_options: projects with the new ui
+  get `assets:install --install-new-ui --always-copy-assets` before the frontend build (copies for the production
+  build, the composer scripts keep symlinks for local development); the other projects only get the assets:install
+  of their composer scripts
 
 # v2.0.4
 * no `app_env` anymore: APP_ENV comes from the shared .env.local on the server (like Symfony), the deploy log shows
