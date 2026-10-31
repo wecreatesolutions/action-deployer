@@ -1,41 +1,41 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Utils;
 
-use Symfony\Component\Yaml\Exception\ParseException;
-use Symfony\Component\Yaml\Yaml;
-
 /**
- * Class ProjectUtils
+ * Parses the app version and the changelog of a project, same format as wecreatesolutions/devops and wcs-cli
+ *
+ * @phpstan-type ChangelogItem array{number: string, title: string}|array{text: string}
  */
-class ProjectUtils
+final class ProjectUtils
 {
-    const APP_TYPE_SF4 = 'SF4';
-    const APP_TYPE_SEF = 'SEF';
+    public const string APP_TYPE_SF4 = 'SF4';
+
+    public const string APP_TYPE_SEF = 'SEF';
 
     /**
-     * Parse change log
+     * Parse the changelog: `# vX.Y.Z` headings with card lines `* \#123 title`, QA card lines `* \#QA-123 title` /
+     * `* \QA-#123 title`, and any other line as text
      *
-     * @param string $changelog
-     * @return array
+     * @return array<string, list<ChangelogItem>>
      */
     public function parseChangelog(string $changelog): array
     {
         $retValue = [];
-        $key      = null;
+        $key      = '';
 
-        foreach (preg_split("/\r\n|\n|\r/", $changelog) as $line) {
+        foreach (preg_split('/\r\n|\n|\r/', $changelog) ?: [] as $line) {
             $line = trim($line);
-            if (preg_match('/^#\s?v([0-9]*\.[0-9]*\.[0-9]*)$/', $line, $matches)) {
+            if (preg_match('/^#\s?v([0-9]+\.[0-9]+\.[0-9]+)$/', $line, $matches) === 1) {
                 $key            = 'v' . $matches[1];
                 $retValue[$key] = [];
-            } elseif (preg_match('/^\* \\\\#([0-9]*)\s(.*)$/', $line, $matches)) {
-                $retValue[$key][] = [
-                    'number' => $matches[1],
-                    'title'  => $matches[2],
-                ];
-            } elseif (mb_strlen($line) > 0) {
+            } elseif (preg_match('/^\* \\\\#(QA-)?([0-9]+)\s(.*)$/', $line, $matches) === 1) {
+                $retValue[$key][] = ['number' => $matches[1] . $matches[2], 'title' => $matches[3]];
+            } elseif (preg_match('/^\* \\\\QA-#([0-9]+)\s(.*)$/', $line, $matches) === 1) {
+                $retValue[$key][] = ['number' => 'QA-' . $matches[1], 'title' => $matches[2]];
+            } elseif ($line !== '') {
                 $retValue[$key][] = ['text' => $line];
             }
         }
@@ -44,58 +44,36 @@ class ProjectUtils
     }
 
     /**
-     * Parse app version from config
-     *
-     * @param string $appType
-     * @param string $configContent
-     * @return string|null
+     * Parse the app version from the config of the app, always with a `v` prefix: SEF the DEPLOYMENT_VERSION in
+     * application/config/application/Config.php, Symfony parameters.app.release in config/packages/app.yaml
      */
     public function parseAppVersion(string $appType, string $configContent): ?string
     {
-        $retValue = null;
+        $pattern = match ($appType) {
+            self::APP_TYPE_SEF => '/^\s*self::DEPLOYMENT_VERSION\s*=>\s*\'(.*)\',\s*$/m',
+            self::APP_TYPE_SF4 => '/^\s+app\.release:\s*[\'"]?([^\'"\s#]+)[\'"]?/m',
+            default            => null,
+        };
 
-        switch ($appType) {
-            case self::APP_TYPE_SF4:
-                try {
-                    $appConfig  = Yaml::parse($configContent);
-                    $parameters = $appConfig['parameters'] ?? [];
-                    $retValue   = $parameters['app.release'] ?? null;
-                } catch (ParseException $exception) {
-                }
-                break;
-            case self::APP_TYPE_SEF:
-                if (preg_match('/^\s*self::DEPLOYMENT_VERSION\s*=>\s*\'(.*)\',\s*$/m', $configContent, $matches)) {
-                    $retValue = $matches[1];
-                }
-                break;
+        if ($pattern === null || preg_match($pattern, $configContent, $matches) !== 1) {
+            return null;
         }
 
-        if ($retValue !== null && strtolower(substr($retValue, 0, 1)) != 'v') {
-            $retValue = 'v' . $retValue;
-        }
-
-        return $retValue;
+        return 'v' . ltrim($matches[1], 'vV');
     }
 
     /**
-     * Change log version to string
+     * Changelog items of one version as release notes
      *
-     * @param array $items
-     * @return string
+     * @param list<ChangelogItem> $items
      */
     public function changeLogVersionToString(array $items): string
     {
         $contentLines = [];
         foreach ($items as $item) {
-            if (array_key_exists('text', $item)) {
-                $contentLines[] = $item['text'];
-            } else {
-                $contentLines[] = sprintf('* \#%1$d %2$s', $item['number'], $item['title']);
-            }
+            $contentLines[] = isset($item['text']) ? $item['text'] : sprintf('* \#%1$s %2$s', $item['number'], $item['title']);
         }
-        $contentLines[] = '';
 
         return trim(implode(PHP_EOL, $contentLines));
     }
-
 }

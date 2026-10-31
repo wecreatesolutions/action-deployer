@@ -15,7 +15,7 @@ use Utils\ProjectUtils;
  * - slack comes from Deployer's own contrib/slack.php
  */
 
-require realpath(__DIR__ . '/../../vendor/autoload.php');
+require_once __DIR__ . '/../Utils/ProjectUtils.php';
 require 'recipe/common.php';
 
 // region environment
@@ -106,30 +106,25 @@ set(
     }
 );
 
-// default was acl - but not enabled by ips containers
-set('writable_mode', 'chmod');
 // Deployer 7+ defaults to false, Deployer 6 was recursive
 set('writable_recursive', true);
 
-// set deploy path
-set('deploy_path', '~/deployer');
+// Deployer 8 keeps 10 releases, Deployer 6 kept 5 (vendor and node_modules per release)
+set('keep_releases', 5);
 
 // clear HOME
 // https://github.com/deployphp/deployer/blob/master/src/Support/Unix.php - parseHomeDir uses HOME which is overridden by github
 unset($_SERVER['HOME']);
 
 // region release name
-// Deployer 7+ numbers releases via .dep/latest_release, Deployer 6 did not write it: without it the first deploy
-// would start at release 1 again (or fail on an existing releases/1). continue after the highest existing release.
+// Deployer 7+ numbers releases via .dep/latest_release, Deployer 6 did not write it (also not when a project deploys
+// with a 1.x image in between): continue after the highest of latest_release and the existing release dirs.
 set('release_name', function () {
     return within('{{deploy_path}}', function () {
-        if (test('[ -f .dep/latest_release ]')) {
-            $latest = run('cat .dep/latest_release');
-        } else {
-            $latest = run("ls -1 releases 2>/dev/null | grep -E '^[0-9]+$' | sort -n | tail -n 1 || true");
-        }
+        $latest  = (int)run('cat .dep/latest_release 2>/dev/null || echo 0');
+        $highest = (int)run("ls -1 releases 2>/dev/null | grep -E '^[0-9]+$' | sort -n | tail -n 1 || echo 0");
 
-        return strval(intval($latest) + 1);
+        return (string)(max($latest, $highest) + 1);
     });
 });
 // endregion
@@ -158,11 +153,14 @@ task(
     'download-revision',
     function () {
 
-        $repositoryName = get('repository_name', 'xxx');
-        $revision       = get('revision', 'xxx');
-        $token          = get('github_token', 'xxx');
+        $repositoryName = get('repository_name');
+        $revision       = get('revision');
 
-        run("cd {{release_path}} && curl -sS -H 'Authorization: token $token' --location --request GET 'https://api.github.com/repos/$repositoryName/tarball/$revision' > repo.tar.gz");
+        // the token goes via stdin (printf is a shell builtin): not in the log, nor in the process list of the server
+        run(
+            "cd {{release_path}} && printf 'Authorization: token %s' %github_token% | curl -fsS -H @- --location 'https://api.github.com/repos/$repositoryName/tarball/$revision' -o repo.tar.gz",
+            secrets: ['github_token' => quote(get('github_token'))],
+        );
     }
 );
 
@@ -178,6 +176,9 @@ task(
         run("cd {{release_path}} && (mv $directionName{*,.[^.]*,..?*} . 2>/dev/null || true)"); // move all files included dot files (when a project does not have dot files ignore error
         run("cd {{release_path}} && rm -rf $directionName");
         run("cd {{release_path}} && rm repo.tar.gz");
+
+        // which commit runs in a release (dep releases, debugging on the server)
+        run("cd {{release_path}} && echo '$revision' > REVISION");
     }
 );
 
@@ -195,6 +196,10 @@ task(
     function () {
         $composerAuthJson = json_decode(get('composer_auth_json', null) ?? '', true);
         if (is_array($composerAuthJson)) {
+            foreach (array_diff(array_keys($composerAuthJson), ['http-basic']) as $unsupported) {
+                warning("COMPOSER_AUTH_JSON: $unsupported is not supported, only http-basic");
+            }
+
             foreach ($composerAuthJson['http-basic'] ?? [] as $host => $config) {
                 $username = $config['username'] ?? null;
                 $password = $config['password'] ?? null;
@@ -214,11 +219,12 @@ desc('Setup permissions');
 task(
     'deploy:setup-permissions',
     function () {
+        // vendor and node_modules come from the previous release (copy_dirs): skipped, so vendor/bin keeps its +x
         // folders
-        run("cd {{release_path}} && find . -type d -not \( -path './awstats*' -o -path './.git*' -o -path \"./var/cache*\" \) ! -perm 0755 -exec chmod 755 {} \;");
+        run("cd {{release_path}} && find . -type d \( -path './vendor' -o -path './node_modules' \) -prune -o -type d -not \( -path './awstats*' -o -path './.git*' -o -path \"./var/cache*\" \) ! -perm 0755 -exec chmod 755 {} \;");
 
         // files
-        run("cd {{release_path}} && find . -type f -not \( -path './awstats/*' -o -path './logs/*' -o -path './stats/*' -o -path './.git/*' \) ! -perm 0644 -exec chmod 644 {} \;");
+        run("cd {{release_path}} && find . -type d \( -path './vendor' -o -path './node_modules' \) -prune -o -type f -not \( -path './awstats/*' -o -path './logs/*' -o -path './stats/*' -o -path './.git/*' \) ! -perm 0644 -exec chmod 644 {} \;");
     }
 );
 
@@ -227,9 +233,20 @@ task(
     'github:create-release',
     function () {
         if (get('stage') === 'production') {
+            // after deploy:success: a failure here must not mark the (live) deploy as failed
+            $appVersion = get('app_version');
+            if ($appVersion === null) {
+                warning('No app version found, no GitHub release created');
+
+                return;
+            }
+
             writeln('Creating new release <info>{{app_version}}</info>...');
 
-            $result = createRelease(get('github_token'), get('repository_name'), get('app_version'), get('app_version_changelog'));
+            $result = createRelease(get('github_token'), get('repository_name'), $appVersion, get('app_version_changelog'), get('revision'));
+            if (!array_key_exists('html_url', $result)) {
+                warning('GitHub release not created: ' . ($result['message'] ?? 'no response'));
+            }
 
             if (array_key_exists('html_url', $result)) {
                 // region notification on slack
@@ -257,7 +274,7 @@ set(
 );
 
 // @see https://deployer.org/docs/8.x/contrib/slack
-if ($slackWebhookToken !== null) {
+if (!empty($slackWebhookToken)) {
     require 'contrib/slack.php';
 
     set('slack_webhook', $slackWebhookToken);
@@ -286,7 +303,7 @@ before('deploy:info', 'deploy:info-stage');
 /**
  * Create release
  */
-function createRelease(string $githubToken, string $repositoryName, string $version, string $changeLogVersionBody): array
+function createRelease(string $githubToken, string $repositoryName, string $version, string $changeLogVersionBody, string $revision): array
 {
     $curl = curl_init();
 
@@ -295,7 +312,8 @@ function createRelease(string $githubToken, string $repositoryName, string $vers
 
     $data = [
         'tag_name'         => $tagName,
-        'target_commitish' => 'master',
+        // the deployed commit, not the head of master (production branch, or master moved on during the deploy)
+        'target_commitish' => $revision,
         'name'             => $releaseName,
         'body'             => $changeLogVersionBody,
         'draft'            => false,

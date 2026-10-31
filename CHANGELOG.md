@@ -1,3 +1,25 @@
+# v2.0.4
+* no `app_env` anymore: APP_ENV comes from the shared .env.local on the server (like Symfony), the deploy log shows
+  it; writable_dirs `var/cache` + `var/log`, cache clear `var/cache/*`, `dotenv:dump` without env
+* acl only: a host without setfacl stops the deploy instead of falling back to chmod 0777
+* NODE_AUTH_TOKEN only for `npm install`, as a deployer secret (no longer in the env of every server command)
+* GITHUB_TOKEN via stdin to curl (not in the process list of the server), curl -f, REVISION file in the release
+* keep_releases 5 (deployer 8 default 10), release name continues after the highest of latest_release and the release
+  dirs, no default deploy_path
+* github release: tagged on the deployed commit, a missing app version or failing api call is a warning
+* php_fpm_service from bin/php (e.g. php8.4-fpm), no second deploy:writable (the default acl covers new files)
+* waf: options assets_install / assets_install_options (default --install-new-ui --always-copy-assets) and
+  messenger_setup_transports, warnings when the messenger restart fails
+* symfony: database:migrate skips batch hosts; docs: use `{{bin/console}}` without `{{bin/php}}`
+* setup-permissions skips vendor and node_modules, no double output (writeln(run())), slack only with a non-empty
+  SLACK_WEBHOOK_TOKEN, a warning for unsupported COMPOSER_AUTH_JSON keys
+* ProjectUtils: typed, QA cards in the changelog (`\#QA-123` / `\QA-#123`), no symfony/yaml: the image has no
+  composer and vendor anymore
+* deploy.sh: StrictHostKeyChecking accept-new, no google dns override, curl -f; deployer.phar checked against its
+  sha256; removed entrypoint.sh, action.yaml, composer.json/lock and the unused apk packages
+* Makefile: no ECR, `release` pushes the version tag only, `release-latest` also latest
+* README rewritten
+
 # v2.0.3
 * writable dirs with acl (www-data + the deploy user, default acl for files created later) when the host has
   setfacl, chmod 0777 with a warning otherwise; http_user www-data (acl tested on the test server, keyplan-platform,
