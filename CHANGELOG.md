@@ -1,3 +1,7 @@
+# v2.0.2
+* waf: `sef_env` is now `app_env` (host config `->set('app_env', 'staging')`, `{{app_env}}`), info line "using APP
+  environment"
+
 # v2.0.1
 * deploy.sh: `--ansi` (colors in the GitHub log), normal verbosity unless INPUT_VERBOSELEVEL is set (deployer 8 prints
   every command with -v)

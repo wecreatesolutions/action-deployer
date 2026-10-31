@@ -10,7 +10,7 @@ use Utils\ProjectUtils;
  * application name, shared_files, hosts and the options below that differ from the defaults.
  *
  * Hosts (Deployer 8 labels instead of Deployer 6 stage/roles):
- *   host('keyplan.test.wecreatesolutions.nl')->setLabels(['stage' => 'staging'])->set('sef_env', 'staging')->set('deploy_path', '/projects/keyplan');
+ *   host('keyplan.test.wecreatesolutions.nl')->setLabels(['stage' => 'staging'])->set('app_env', 'staging')->set('deploy_path', '/projects/keyplan');
  *   host('keyplan-batch.prod.wecreatesolutions.nl')->setLabels(['stage' => 'production', 'role' => 'batch'])->...;
  *
  * Options (set() in the project deploy.php):
@@ -18,7 +18,7 @@ use Utils\ProjectUtils;
  * - node_version             (default '22')  installed and used with nvm for the frontend build
  * - npm_install_command      (default 'npm install')
  * - frontend_build_command   (default 'npm run build')
- * - dotenv_dump              (default false) true runs `dotenv:dump {{sef_env}}` after the vendors
+ * - dotenv_dump              (default false) true runs `dotenv:dump {{app_env}}` after the vendors
  * - messenger_systemd_unit   (default null)  e.g. 'keyplan-messenger@*': enables messenger:setup-transports after the
  *                                            migration and a graceful consumer restart after the symlink
  * - messenger_restart_roles  (default [])    only restart the consumers on hosts with one of these role labels, e.g. ['batch']
@@ -48,9 +48,9 @@ set('shared_files', [
 set('copy_dirs', ['vendor']);
 
 // writable dirs by web server - var/log is shared but never got its permissions from a deploy, so the web server
-// user could not create a new log file or dir in it (e.g. messenger_{{sef_env}}.log, var/log/se_company) when the
+// user could not create a new log file or dir in it (e.g. messenger_{{app_env}}.log, var/log/se_company) when the
 // shared dir was new
-set('writable_dirs', ['var/cache/{{sef_env}}', 'var/log']);
+set('writable_dirs', ['var/cache/{{app_env}}', 'var/log']);
 set('writable_mode', 'chmod');
 set('writable_chmod_mode', '0777');
 
@@ -85,23 +85,23 @@ set(
 );
 // endregion
 
-// region sef env
+// region app env
 set(
-    'sef_env',
+    'app_env',
     function () {
         switch (get('stage')) {
             case 'staging':
-                $sefEnv = 'staging';
+                $appEnv = 'staging';
                 break;
             case 'production':
-                $sefEnv = 'prod';
+                $appEnv = 'prod';
                 break;
             default:
-                echo 'Unable to determine sef environment';
+                echo 'Unable to determine app environment';
                 exit(1);
         }
 
-        return $sefEnv;
+        return $appEnv;
     }
 );
 // endregion
@@ -152,13 +152,13 @@ desc('Display additional info');
 task(
     'deploy:info-stage',
     function () {
-        writeln('Deployment target is <info>{{stage}}</info>, using SEF environment <info>{{sef_env}}</info>, deploying app version <info>{{app_version}}</info>');
+        writeln('Deployment target is <info>{{stage}}</info>, using APP environment <info>{{app_env}}</info>, deploying app version <info>{{app_version}}</info>');
     }
 );
 
 desc('Clear cache');
 task('deploy:cache:clear', function () {
-    run('cd {{release_path}} && rm -rf var/cache/{{sef_env}}/*');
+    run('cd {{release_path}} && rm -rf var/cache/{{app_env}}/*');
 });
 
 desc('Warmup cache');
@@ -186,7 +186,7 @@ after('deploy:vendors', 'deploy:build-frontend');
 desc('Dump env');
 task('deploy:dump-env', function () {
     if (get('dotenv_dump')) {
-        writeln(run('cd {{release_path}} && {{bin/console}} dotenv:dump {{sef_env}}'));
+        writeln(run('cd {{release_path}} && {{bin/console}} dotenv:dump {{app_env}}'));
     }
 });
 after('deploy:vendors', 'deploy:dump-env');
