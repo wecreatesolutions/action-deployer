@@ -5,7 +5,7 @@ namespace Deployer;
 use Utils\ProjectUtils;
 
 /*
- * WAF recipe (Deployer 8, image >= 1.2.0): everything of sef.php plus the config the WAF projects (keyplan, service-engine, bouwmeester-bouwcloud,
+ * WAF recipe (Deployer 8, image >= 2.0.0): everything of sef.php plus the config the WAF projects (keyplan, service-engine, bouwmeester-bouwcloud,
  * bluebricks) shared in their own deploy.php. A project deploy.php only needs `require 'recipes/waf.php';`, its
  * application name, shared_files, hosts and the options below that differ from the defaults.
  *

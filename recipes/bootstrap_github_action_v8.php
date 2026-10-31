@@ -5,7 +5,7 @@ namespace Deployer;
 use Utils\ProjectUtils;
 
 /*
- * GitHub Action bootstrap for Deployer 8 (image >= 1.2.0), used by recipes/waf.php.
+ * GitHub Action bootstrap for Deployer 8 (image >= 2.0.0), used by recipes/waf.php.
  * bootstrap_github_action.php is the Deployer 6 version for the 1.1.x images (sef.php, wab-*.php).
  *
  * Differences with the Deployer 6 bootstrap:

@@ -1,5 +1,5 @@
-# v1.2.0
-* image `ghcr.io/wecreatesolutions/action-deployer:1.2.0-8.4.27-cli-alpine` (was `wimwinterberg/action-deployer`)
+# v2.0.0
+* image `ghcr.io/wecreatesolutions/action-deployer:2.0.0-8.4.27-cli-alpine` (was `wimwinterberg/action-deployer`)
 * php 8.4.27, deployer 8.0.5 (was 6.8.0), deprecation notices hidden in the deploy log
 * new recipe `recipes/waf.php` (deployer 8) with its bootstrap `recipes/bootstrap_github_action_v8.php`: everything of
   sef.php plus the config the waf projects shared in their deploy.php
