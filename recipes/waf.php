@@ -5,35 +5,25 @@ namespace Deployer;
 use Utils\ProjectUtils;
 
 /*
- * WAF recipe (Deployer 8, image >= 2.0.0): everything of sef.php plus the config the WAF projects (keyplan, service-engine, bouwmeester-bouwcloud,
- * bluebricks) shared in their own deploy.php. A project deploy.php only needs `require 'recipes/waf.php';`, its
- * application name, shared_files, hosts and the options below that differ from the defaults.
+ * WAF recipe (Deployer 8, image >= 2.0.0) for the SEF/WAF projects (keyplan, service-engine, bouwmeester-bouwcloud,
+ * bluebricks). A project deploy.php only needs `require 'recipes/waf.php';`, its application name, shared_files, hosts
+ * and the options that differ from the defaults (see also recipes/wcs.php).
  *
  * Hosts (Deployer 8 labels instead of Deployer 6 stage/roles):
  *   host('keyplan.test.wecreatesolutions.nl')->setLabels(['stage' => 'staging'])->set('app_env', 'staging')->set('deploy_path', '/projects/keyplan');
  *   host('keyplan-batch.prod.wecreatesolutions.nl')->setLabels(['stage' => 'production', 'role' => 'batch'])->...;
  *
- * Options (set() in the project deploy.php):
- * - frontend_build           (default true)  false when the project builds its frontend in an own task
- * - node_version             (default '22')  installed and used with nvm for the frontend build
- * - npm_install_command      (default 'npm install')
- * - frontend_build_command   (default 'npm run build')
+ * Options (set() in the project deploy.php), next to the ones of recipes/wcs.php:
  * - dotenv_dump              (default false) true runs `dotenv:dump {{app_env}}` after the vendors
  * - messenger_systemd_unit   (default null)  e.g. 'keyplan-messenger@*': enables messenger:setup-transports after the
  *                                            migration and a graceful consumer restart after the symlink
  * - messenger_restart_roles  (default [])    only restart the consumers on hosts with one of these role labels, e.g. ['batch']
- * - php_fpm_service          (default 'php8.4-fpm') reloaded after the symlink so the opcache does not serve the
- *                                            previous release; null to skip
- *
- * Environment of the deployment workflow:
- * - NODE_AUTH_TOKEN: needed when the project .npmrc reads ${NODE_AUTH_TOKEN} (private @wecreatesolutions npm packages).
- *   The workflow env only reaches this container, so the recipe passes it on to the commands on the server.
  */
 
-require_once __DIR__ . '/bootstrap_github_action_v8.php';
+require_once __DIR__ . '/bootstrap_github_action.php';
+require_once __DIR__ . '/wcs.php';
 
 // region setup configuration
-set('default_timeout', 3600);
 
 // shared files/dirs between deploys
 set('shared_dirs', [
@@ -44,43 +34,20 @@ set('shared_files', [
     '.env.local',
 ]);
 
-// copy dirs
-set('copy_dirs', ['vendor']);
-
 // writable dirs by web server - var/log is shared but never got its permissions from a deploy, so the web server
 // user could not create a new log file or dir in it (e.g. messenger_{{app_env}}.log, var/log/se_company) when the
 // shared dir was new
 set('writable_dirs', ['var/cache/{{app_env}}', 'var/log']);
-// acl: www-data and the deploy user get write access, and files created later (e.g. by a console command as root)
-// inherit it via the default acl - instead of world writable dirs. hosts without setfacl (apt install acl) keep chmod.
-set('writable_mode', function () {
-    if (commandExist('setfacl')) {
-        return 'acl';
-    }
 
-    warning('setfacl not found on {{alias}} (apt install acl): writable dirs use chmod {{writable_chmod_mode}}');
-
-    return 'chmod';
-});
-set('http_user', 'www-data');
-set('writable_chmod_mode', '0777');
-
-set('bin/php', '/usr/bin/php8.4');
-set('bin/composer', '{{bin/php}} /usr/bin/composer');
 set('bin/console', '{{bin/php}} {{release_path}}/bin/console');
 set('console_options', function () {
     return '';
 });
 set('composer_options', '--verbose --prefer-dist --no-progress --no-dev --optimize-autoloader'); // removed --no-interaction ~ we like to see more info :) - Deployer 7+ adds {{composer_action}} itself
 
-set('frontend_build', true);
-set('node_version', '22');
-set('npm_install_command', 'npm install');
-set('frontend_build_command', 'npm run build');
 set('dotenv_dump', false);
 set('messenger_systemd_unit', null);
 set('messenger_restart_roles', []);
-set('php_fpm_service', 'php8.4-fpm');
 // endregion
 
 // region sef app version
@@ -118,34 +85,11 @@ set(
 // endregion
 
 // region tasks
-
-// region environment of the commands on the server
-// composer runs as root on the servers: without COMPOSER_ALLOW_SUPERUSER it disables its plugins, so symfony/runtime
-// never writes vendor/autoload_runtime.php and bin/console fails in a new deploy path (exit 255)
-desc('Set the environment of the commands on the server');
-task(
-    'deploy:server-env',
-    function () {
-        $env = ['COMPOSER_ALLOW_SUPERUSER' => '1'];
-
-        $nodeAuthToken = getenv('NODE_AUTH_TOKEN');
-        if (is_string($nodeAuthToken) && $nodeAuthToken !== '') {
-            $env['NODE_AUTH_TOKEN'] = $nodeAuthToken;
-        } elseif (test('grep -qs NODE_AUTH_TOKEN {{release_path}}/.npmrc')) {
-            throw new \RuntimeException('.npmrc reads NODE_AUTH_TOKEN, but it is not set: add NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }} to the env of the deploy step in the deployment workflow');
-        }
-
-        set('env', array_merge(get('env', []), $env));
-    }
-);
-before('composer-set-auth', 'deploy:server-env');
-// endregion
-
 desc('Running migration');
 task(
     'deploy:migrate',
     function () {
-        if (!wafHostHasRole(['batch'])) {
+        if (!hostHasRole(['batch'])) {
             $result = run('cd {{release_path}} && {{bin/console}} waf:migration:migrate');
             writeln($result);
 
@@ -178,21 +122,14 @@ task('deploy:cache:warmup', function () {
     writeln($result);
 });
 
-// region frontend
-desc('Build frontend');
-task('deploy:build-frontend', function () {
-    if (!get('frontend_build')) {
-        return;
+// the webpack entries live in the generated _assets/, so install the waf assets before the frontend build
+desc('Install the waf assets');
+task('deploy:assets-install', function () {
+    if (get('frontend_build')) {
+        writeln(run('cd {{release_path}} && {{bin/console}} assets:install --install-new-ui --always-copy-assets'));
     }
-
-    // install node before using it (a new server or node version does not have it yet)
-    writeln(run('. ~/.nvm/nvm.sh && nvm install {{node_version}}'));
-    writeln(run('. ~/.nvm/nvm.sh && nvm use {{node_version}} && cd {{release_path}} && {{npm_install_command}}'));
-    writeln(run('cd {{release_path}} && {{bin/console}} assets:install --install-new-ui --always-copy-assets'));
-    writeln(run('. ~/.nvm/nvm.sh && nvm use {{node_version}} && cd {{release_path}} && {{frontend_build_command}}'));
 });
-after('deploy:vendors', 'deploy:build-frontend');
-// endregion
+before('deploy:build-frontend', 'deploy:assets-install');
 
 desc('Dump env');
 task('deploy:dump-env', function () {
@@ -201,13 +138,6 @@ task('deploy:dump-env', function () {
     }
 });
 after('deploy:vendors', 'deploy:dump-env');
-
-// region writable after the console commands
-// deploy:writable runs before deploy:cache:warmup / deploy:migrate, so everything those console commands create
-// afterwards is owned by the deploy user with umask 022 and is not writable for the web server user.
-// run it again once all console commands are done.
-before('deploy:symlink', 'deploy:writable');
-// endregion
 
 // region messenger consumers
 // graceful: a running messenger:consume worker finishes its current message and exits, systemd restarts it on the
@@ -220,7 +150,7 @@ task('deploy:messenger-restart', function () {
     }
 
     $restartRoles = get('messenger_restart_roles');
-    if ($restartRoles !== [] && !wafHostHasRole($restartRoles)) {
+    if ($restartRoles !== [] && !hostHasRole($restartRoles)) {
         return;
     }
 
@@ -228,21 +158,6 @@ task('deploy:messenger-restart', function () {
     writeln(run(sprintf("systemctl --user restart '%s' || true", $unit)));
 });
 after('deploy:symlink', 'deploy:messenger-restart');
-// endregion
-
-// region opcache
-// the opcache keeps serving the previous release after the symlink switch, a graceful php-fpm reload clears it
-// without dropping running requests (restart would)
-desc('Reload php-fpm (clears the opcache)');
-task('deploy:php-fpm-reload', function () {
-    $service = get('php_fpm_service');
-    if ($service === null) {
-        return;
-    }
-
-    run(sprintf('systemctl reload %s', $service));
-});
-after('deploy:symlink', 'deploy:php-fpm-reload');
 // endregion
 
 task(
@@ -267,13 +182,3 @@ task(
     ]
 );
 // endregion
-
-/**
- * Whether the current host has one of the given role labels (Deployer 8 replacement of the Deployer 6 roles)
- *
- * @param string[] $roles
- */
-function wafHostHasRole(array $roles): bool
-{
-    return in_array(currentHost()->getLabels()['role'] ?? null, $roles, true);
-}
