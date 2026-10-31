@@ -116,6 +116,11 @@ task('deploy:php-fpm-reload', function () {
         return;
     }
 
+    // a batch server only runs workers: php-fpm there is unexpected (reloaded anyway, so it never serves an old release)
+    if (hostHasRole(['batch'])) {
+        warning(sprintf('%s runs on batch host {{alias}}: a batch server only needs php-cli for the workers', $service));
+    }
+
     run(sprintf('systemctl reload %s', $service));
 });
 after('deploy:symlink', 'deploy:php-fpm-reload');
