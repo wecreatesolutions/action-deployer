@@ -1,3 +1,8 @@
+# v2.0.3
+* waf: writable dirs with acl (www-data + the deploy user, default acl for files created later) when the host has
+  setfacl, chmod 0777 with a warning otherwise; http_user www-data (acl tested on the test server, keyplan-platform,
+  keyplan-batch, bouwmeester.bouwcloud.org and admin.bluebricks.nl)
+
 # v2.0.2
 * waf: `sef_env` is now `app_env` (host config `->set('app_env', 'staging')`, `{{app_env}}`), info line "using APP
   environment"

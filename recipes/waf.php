@@ -51,7 +51,18 @@ set('copy_dirs', ['vendor']);
 // user could not create a new log file or dir in it (e.g. messenger_{{app_env}}.log, var/log/se_company) when the
 // shared dir was new
 set('writable_dirs', ['var/cache/{{app_env}}', 'var/log']);
-set('writable_mode', 'chmod');
+// acl: www-data and the deploy user get write access, and files created later (e.g. by a console command as root)
+// inherit it via the default acl - instead of world writable dirs. hosts without setfacl (apt install acl) keep chmod.
+set('writable_mode', function () {
+    if (commandExist('setfacl')) {
+        return 'acl';
+    }
+
+    warning('setfacl not found on {{alias}} (apt install acl): writable dirs use chmod {{writable_chmod_mode}}');
+
+    return 'chmod';
+});
+set('http_user', 'www-data');
 set('writable_chmod_mode', '0777');
 
 set('bin/php', '/usr/bin/php8.4');
