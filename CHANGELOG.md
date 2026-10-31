@@ -1,3 +1,9 @@
+# v2.0.1
+* deploy.sh: `--ansi` (colors in the GitHub log), normal verbosity unless INPUT_VERBOSELEVEL is set (deployer 8 prints
+  every command with -v)
+* waf: tar without -v, slack shows the host again ({{hostname}}), duration of the whole deploy (deployer 8 runs tasks
+  in worker processes)
+
 # v2.0.0
 * image `ghcr.io/wecreatesolutions/action-deployer:2.0.0-8.4.27-cli-alpine` (was `wimwinterberg/action-deployer`)
 * php 8.4.27, deployer 8.0.5 (was 6.8.0), deprecation notices hidden in the deploy log

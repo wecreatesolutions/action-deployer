@@ -25,7 +25,10 @@ $token             = $_ENV['GITHUB_TOKEN'] ?? null;
 $slackWebhookToken = $_ENV['SLACK_WEBHOOK_TOKEN'] ?? null;
 $githubActor       = $_ENV['GITHUB_ACTOR'] ?? null;
 $branch            = preg_replace('%^refs/heads/(.*)%m', '\1', $_ENV['GITHUB_REF'] ?? '');
-$start             = microtime(true);
+// deployer 8 runs every task in its own worker process: keep the start time of the deploy itself (the master) for {{duration}}
+$start = (float)(getenv('WAF_DEPLOY_START') ?: microtime(true));
+putenv('WAF_DEPLOY_START=' . $start);
+$_SERVER['WAF_DEPLOY_START'] = $_ENV['WAF_DEPLOY_START'] = (string)$start; // symfony process passes these to the workers
 
 if ($token === null) {
     echo 'Missing GITHUB_TOKEN';
@@ -171,7 +174,7 @@ task(
         $revision       = get('revision', 'xxx');
 
         $directionName = str_replace('/', '-', $repositoryName) . '-' . $revision . '/';
-        run("cd {{release_path}} && tar -xvf repo.tar.gz  $directionName");
+        run("cd {{release_path}} && tar -xf repo.tar.gz $directionName");
         run("cd {{release_path}} && (mv $directionName{*,.[^.]*,..?*} . 2>/dev/null || true)"); // move all files included dot files (when a project does not have dot files ignore error
         run("cd {{release_path}} && rm -rf $directionName");
         run("cd {{release_path}} && rm repo.tar.gz");
@@ -237,7 +240,7 @@ task(
                 $url  = $result['html_url'];
                 $name = $result['name'];
 
-                set('slack_success_text', sprintf('Deployment to *{{where}}* with version `%1$s` successful - see <%2$s|release> - {{duration}}', $name, $url));
+                set('slack_success_text', sprintf('Deployment to *{{hostname}}* with version `%1$s` successful - see <%2$s|release> - {{duration}}', $name, $url));
             }
             // endregion
         }
@@ -258,8 +261,10 @@ if ($slackWebhookToken !== null) {
     require 'contrib/slack.php';
 
     set('slack_webhook', $slackWebhookToken);
-    set('slack_text', '_{{user}}_ deploying `{{branch}}` with version `{{app_version}}` to *{{where}}* - _{{stage}}_');
-    set('slack_success_text', 'Deployment to *{{where}}* with version `{{app_version}}` successful - {{duration}}');
+    // {{where}} is the stage in deployer 8, deployer 6 showed the host ({{target}}, now the git target)
+    set('slack_text', '_{{user}}_ deploying `{{branch}}` with version `{{app_version}}` to *{{hostname}}* - _{{stage}}_');
+    set('slack_success_text', 'Deployment to *{{hostname}}* with version `{{app_version}}` successful - {{duration}}');
+    set('slack_failure_text', 'Deployment to *{{hostname}}* with version `{{app_version}}` failed - {{duration}}');
 
     before('deploy:info', 'slack:notify');
     after('deploy:success', 'slack:notify:success');
