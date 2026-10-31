@@ -1,9 +1,9 @@
 # used https://github.com/musps/action-deployer-php/ for inspiration
 
 # Container image that runs your code
-FROM php:7.4-cli-alpine
+FROM php:8.4.27-cli-alpine
 
-ENV DEPLOYER_VERSION=6.8.0
+ENV DEPLOYER_VERSION=8.0.5
 
 RUN apk update --no-cache \
     && apk add --no-cache \
@@ -22,8 +22,11 @@ RUN sed -i -e "s/bin\/ash/bin\/bash/" /etc/passwd
 # setting php include path
 COPY config/include_path.ini $PHP_INI_DIR/conf.d/
 
+# hide deprecation notices (e.g. of older bundled packages) in the deploy log
+COPY config/error_reporting.ini $PHP_INI_DIR/conf.d/
+
 # installing deployer
-RUN curl -L https://deployer.org/releases/v$DEPLOYER_VERSION/deployer.phar > /usr/local/bin/deployer \
+RUN curl -fL https://github.com/deployphp/deployer/releases/download/v$DEPLOYER_VERSION/deployer.phar > /usr/local/bin/deployer \
     && chmod +x /usr/local/bin/deployer
 
 ## installing node and npm

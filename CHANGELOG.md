@@ -1,3 +1,18 @@
+# v1.2.0
+* image `ghcr.io/wecreatesolutions/action-deployer:1.2.0-8.4.27-cli-alpine` (was `wimwinterberg/action-deployer`)
+* php 8.4.27, deployer 8.0.5 (was 6.8.0), deprecation notices hidden in the deploy log
+* new recipe `recipes/waf.php` (deployer 8) with its bootstrap `recipes/bootstrap_github_action_v8.php`: everything of
+  sef.php plus the config the waf projects shared in their deploy.php
+  * hosts use labels: `->setLabels(['stage' => 'staging'])`, batch hosts `'role' => 'batch'`
+  * COMPOSER_ALLOW_SUPERUSER and NODE_AUTH_TOKEN (from the workflow env) on the server
+  * var/log writable, deploy:writable again before deploy:symlink
+  * waf:migration:migrate, frontend build (nvm install/use, npm install, assets:install, build), optional dotenv:dump
+  * optional messenger (setup-transports, consumer restart per systemd unit), php-fpm reload for the opcache
+  * releases continue after the highest deployer 6 release
+  * composer http-basic password no longer in the deploy log
+* sef.php and wab-*.php stay deployer 6 recipes: use image 1.1.20 for those
+* removed deployer/recipes (php ~7.0), symfony/yaml 7.4
+
 v1.1.20
 * using php 7.4
 * using google dns server
