@@ -15,10 +15,6 @@ use Utils\ProjectUtils;
  *   host('keyplan-batch.prod.wecreatesolutions.nl')->setLabels(['stage' => 'production', 'role' => 'batch'])->...;
  *
  * Options (set() in the project deploy.php), next to the ones of recipes/wcs.php:
- * - new_ui                     (default false) true for projects with the new ui (assets/): runs `assets:install
- *                                              --install-new-ui --always-copy-assets` before the frontend build, so the
- *                                              production build uses copies (the composer scripts install symlinks,
- *                                              which local development needs)
  * - dotenv_dump                (default false) true runs `dotenv:dump` after the vendors
  * - messenger_setup_transports (default: true when messenger_systemd_unit is set) messenger:setup-transports after
  *                                              the migration (the transport DSN only auto-creates the table in dev)
@@ -26,7 +22,8 @@ use Utils\ProjectUtils;
  * - messenger_restart_roles    (default [])    only restart the consumers on hosts with one of these role labels, e.g. ['batch']
  *
  * The migration runs on one host only: hosts with role label `batch` skip it.
- * The composer scripts of the project (`auto-scripts-waf`) run `assets:install` during deploy:vendors.
+ * assets:install is not part of the recipe: the composer scripts of the project run it during deploy:vendors
+ * (`post-install-cmd` / `auto-scripts-waf`, with `--install-new-ui` for projects with the new ui).
  */
 
 require_once __DIR__ . '/bootstrap_github_action.php';
@@ -54,7 +51,6 @@ set('console_options', function () {
 });
 set('composer_options', '--verbose --prefer-dist --no-progress --no-dev --optimize-autoloader'); // removed --no-interaction ~ we like to see more info :) - Deployer 7+ adds {{composer_action}} itself
 
-set('new_ui', false);
 set('dotenv_dump', false);
 set('messenger_systemd_unit', null);
 set('messenger_setup_transports', function () {
@@ -117,15 +113,6 @@ desc('Warmup cache');
 task('deploy:cache:warmup', function () {
     run('cd {{release_path}} && {{bin/console}} cache:warmup');
 });
-
-// new ui: the production build uses copies of the assets instead of the symlinks of the composer scripts
-desc('Install the waf assets as copies for the build');
-task('deploy:assets-install', function () {
-    if (get('new_ui') && frontendBuildOnHost()) {
-        run('cd {{release_path}} && {{bin/console}} assets:install --install-new-ui --always-copy-assets');
-    }
-});
-before('deploy:build-frontend', 'deploy:assets-install');
 
 desc('Dump env');
 task('deploy:dump-env', function () {
