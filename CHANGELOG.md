@@ -6,6 +6,8 @@
   config, app version from config/packages/app.yaml, database:migrate before the symlink, copy_dirs vendor only
 * shared config of waf.php and symfony.php in `recipes/wcs.php`: server env (composer superuser, NODE_AUTH_TOKEN),
   writable acl, frontend build (`node_version` null uses .nvmrc), php-fpm reload, hostHasRole()
+* hosts with role label `batch` get no frontend build (`frontend_build_skip_roles`), the php-fpm reload is skipped
+  when the service does not run on the host; the waf migration already skipped batch hosts
 * removed the deployer 6 recipes sef.php, wab-symfony.php, wab-react.php, wab-reactV2.php and their bootstrap; the
   deployer 8 bootstrap is now `recipes/bootstrap_github_action.php` (projects on these recipes keep image 1.1.20)
 

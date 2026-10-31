@@ -125,7 +125,7 @@ task('deploy:cache:warmup', function () {
 // the webpack entries live in the generated _assets/, so install the waf assets before the frontend build
 desc('Install the waf assets');
 task('deploy:assets-install', function () {
-    if (get('frontend_build')) {
+    if (frontendBuildOnHost()) {
         writeln(run('cd {{release_path}} && {{bin/console}} assets:install --install-new-ui --always-copy-assets'));
     }
 });

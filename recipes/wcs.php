@@ -8,11 +8,13 @@ namespace Deployer;
  *
  * Options (set() in the project deploy.php):
  * - frontend_build           (default true)  false when the project has no frontend or builds it in an own task
+ * - frontend_build_skip_roles (default ['batch']) hosts with one of these role labels get no frontend build (a batch
+ *                                            server only runs workers)
  * - node_version             (default '22')  installed and used with nvm for the frontend build; null uses .nvmrc
  * - npm_install_command      (default 'npm install')
  * - frontend_build_command   (default 'npm run build')
  * - php_fpm_service          (default 'php8.4-fpm') reloaded after the symlink so the opcache does not serve the
- *                                            previous release; null to skip
+ *                                            previous release, skipped when it does not run on the host; null to skip
  *
  * Environment of the deployment workflow:
  * - NODE_AUTH_TOKEN: needed when the project .npmrc reads ${NODE_AUTH_TOKEN} (private @wecreatesolutions npm packages).
@@ -44,6 +46,7 @@ set('bin/php', '/usr/bin/php8.4');
 set('bin/composer', '{{bin/php}} /usr/bin/composer');
 
 set('frontend_build', true);
+set('frontend_build_skip_roles', ['batch']);
 set('node_version', '22');
 set('npm_install_command', 'npm install');
 set('frontend_build_command', 'npm run build');
@@ -75,7 +78,7 @@ before('composer-set-auth', 'deploy:server-env');
 // region frontend
 desc('Build frontend');
 task('deploy:build-frontend', function () {
-    if (!get('frontend_build')) {
+    if (!frontendBuildOnHost()) {
         return;
     }
 
@@ -107,10 +110,24 @@ task('deploy:php-fpm-reload', function () {
         return;
     }
 
+    if (!test(sprintf('systemctl is-active --quiet %s', $service))) {
+        writeln(sprintf('%s does not run on {{alias}}, no reload', $service));
+
+        return;
+    }
+
     run(sprintf('systemctl reload %s', $service));
 });
 after('deploy:symlink', 'deploy:php-fpm-reload');
 // endregion
+
+/**
+ * Whether the frontend is built on the current host (frontend_build, not on frontend_build_skip_roles hosts)
+ */
+function frontendBuildOnHost(): bool
+{
+    return get('frontend_build') && !hostHasRole(get('frontend_build_skip_roles'));
+}
 
 /**
  * Whether the current host has one of the given role labels (Deployer 8 replacement of the Deployer 6 roles)
