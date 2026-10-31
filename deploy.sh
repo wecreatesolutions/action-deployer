@@ -10,12 +10,11 @@ chmod 600 /tmp/id_rsa
 ssh-add /tmp/id_rsa
 
 # region $INPUT_VERBOSELEVEL
-# deployer 8 prints every command and its output from -v on: normal output by default, set INPUT_VERBOSELEVEL (v, vv,
-# vvv) in the workflow env for more
-VERBOSE_ARG=''
-if [ -n "$INPUT_VERBOSELEVEL" ]; then
-  VERBOSE_ARG="-$INPUT_VERBOSELEVEL"
+# -v: deployer 8 prints every command and its output, folded per task in the GitHub log (vv / vvv for more)
+if [ -z "$INPUT_VERBOSELEVEL" ]; then
+  INPUT_VERBOSELEVEL='v'
 fi
+VERBOSE_ARG="-$INPUT_VERBOSELEVEL"
 #endregion
 
 # region $INPUT_DEPLOYERFILELOCATION
