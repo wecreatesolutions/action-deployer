@@ -2,6 +2,7 @@
 
 namespace Deployer;
 
+use Deployer\Exception\RunException;
 use Utils\ProjectUtils;
 
 /*
@@ -137,11 +138,17 @@ task('deploy:messenger-restart', function () {
         return;
     }
 
-    if (!test('cd {{release_path}} && {{bin/console}} messenger:stop-workers')) {
-        warning('messenger:stop-workers failed on {{alias}}');
+    // run() + catch instead of test(): Deployer's test() compares the whole output with its marker, so a command that
+    // prints something (stop-workers prints an [OK] line) would always count as failed
+    try {
+        run('cd {{release_path}} && {{bin/console}} messenger:stop-workers');
+    } catch (RunException $exception) {
+        warning(sprintf('messenger:stop-workers failed on %s: %s', currentHost()->getAlias(), trim($exception->getErrorOutput() ?: $exception->getOutput())));
     }
-    if (!test(sprintf("systemctl --user restart '%s'", $unit))) {
-        warning(sprintf('could not restart %s on {{alias}}: the consumers may still run the previous release', $unit));
+    try {
+        run(sprintf("systemctl --user restart '%s'", $unit));
+    } catch (RunException $exception) {
+        warning(sprintf('could not restart %s on %s: the consumers may still run the previous release (%s)', $unit, currentHost()->getAlias(), trim($exception->getErrorOutput() ?: $exception->getOutput())));
     }
 });
 after('deploy:symlink', 'deploy:messenger-restart');

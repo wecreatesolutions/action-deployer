@@ -1,3 +1,9 @@
+# v2.0.6
+* waf: `deploy:messenger-restart` no longer warns "messenger:stop-workers failed" on every deploy: Deployer's `test()`
+  compares the whole output with its marker, so the `[OK]` line of stop-workers counted as a failure. stop-workers and
+  the systemctl restart now use `run()`; a real failure still gives a warning, with the error output (found on the first
+  bouwmeester-bouwcloud staging deploy, QA #246)
+
 # v2.0.5
 * waf: no `deploy:assets-install` (and no assets_install options) anymore: the composer scripts of the project run
   `assets:install` during deploy:vendors, with `--install-new-ui` for the projects with the new ui
