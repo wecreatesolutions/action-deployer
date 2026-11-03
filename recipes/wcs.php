@@ -10,9 +10,12 @@ namespace Deployer;
  * - frontend_build            (default true)  false when the project has no frontend or builds it in an own task
  * - frontend_build_skip_roles (default ['batch']) hosts with one of these role labels get no frontend build (a batch
  *                                             server only runs workers)
- * - node_version              (default '22')  installed and used with nvm for the frontend build; null uses .nvmrc
+ * - node_version              (default: null when the release has an .nvmrc, else '22') installed and used with nvm for
+ *                                             the frontend build; null uses the .nvmrc of the release
  * - npm_install_command       (default 'npm install')
  * - frontend_build_command    (default 'npm run build')
+ * - bin/composer              (default: the first of /usr/local/bin/composer2, /usr/bin/composer,
+ *                                             /usr/local/bin/composer, `command -v composer`) run with bin/php
  * - php_fpm_service           (default from bin/php, e.g. 'php8.4-fpm') reloaded after the symlink so the opcache does
  *                                             not serve the previous release, skipped when it does not run on the
  *                                             host; null to skip
@@ -42,11 +45,29 @@ set('writable_mode', function () {
 set('http_user', 'www-data');
 
 set('bin/php', '/usr/bin/php8.4');
-set('bin/composer', '{{bin/php}} /usr/bin/composer');
+// composer lives in different places on the servers: composer2 first (always composer 2, on the test server newer
+// than /usr/bin/composer)
+set('bin/composer', function () {
+    foreach (['/usr/local/bin/composer2', '/usr/bin/composer', '/usr/local/bin/composer'] as $path) {
+        if (test(sprintf('[ -f %s ]', $path))) {
+            return get('bin/php') . ' ' . $path;
+        }
+    }
+
+    $path = run('command -v composer || command -v composer2 || true');
+    if ($path === '') {
+        throw new \RuntimeException(sprintf('composer not found on %s: set bin/composer for this host', currentHost()->getAlias()));
+    }
+
+    return get('bin/php') . ' ' . $path;
+});
 
 set('frontend_build', true);
 set('frontend_build_skip_roles', ['batch']);
-set('node_version', '22');
+// the .nvmrc of the project wins, '22' only when it has none
+set('node_version', function () {
+    return test('[ -f {{release_path}}/.nvmrc ]') ? null : '22';
+});
 set('npm_install_command', 'npm install');
 set('frontend_build_command', 'npm run build');
 set('php_fpm_service', function () {

@@ -1,3 +1,14 @@
+# v2.0.8
+* symfony: the cache is cleared (and warmed up) again after `deploy:build-frontend`. The `cache:clear` of the composer
+  scripts runs during deploy:vendors, before the build, so e.g. the vite entrypoints (pentatrion_vite `cache: true`) were
+  cached from a missing build; Deployer's own `deploy:cache:clear` only runs with `--no-scripts` (agileview-api, QA #246)
+* `node_version` defaults to the `.nvmrc` of the release when it has one, `'22'` otherwise (bluebricks: v22.18.0,
+  beleidsportaal and agileview-api: v24)
+* `bin/composer` defaults to the first of `/usr/local/bin/composer2`, `/usr/bin/composer`, `/usr/local/bin/composer`,
+  `command -v composer`, so a host override for composer2 is no longer needed
+* not added: `chmod +x node_modules/.bin/*`. It was needed in 1.x because copy_dirs took node_modules from the previous
+  release and the permission step set every file to 0644; 2.x copies only vendor and skips node_modules
+
 # v2.0.7
 * waf: `dotenv_dump` passes the APP_ENV of `shared/.env.local` to `dotenv:dump` (`dotenv:dump staging`). Since 2.0.4 it
   ran without an env, so the command used its default (prod in sef-core): the `.env.local.php` it writes wins over the

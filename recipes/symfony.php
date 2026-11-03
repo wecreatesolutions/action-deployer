@@ -14,6 +14,9 @@ use Utils\ProjectUtils;
  *
  * Next to the options of recipes/wcs.php (frontend build, node version, php-fpm reload):
  * - the app version comes from parameters.app.release in config/packages/app.yaml
+ * - the cache is cleared (and warmed up) again after the frontend build: the cache:clear of the composer scripts runs
+ *   during deploy:vendors, before the build, so e.g. the vite entrypoints (pentatrion_vite cache: true) would be cached
+ *   from a missing build
  * - database:migrate (doctrine migrations) runs before the symlink, not on hosts with role label `batch`; hook project
  *   migrations after it, e.g. after('database:migrate', 'tenants-database:migrate');
  * - {{bin/console}} already contains php in Deployer 8 ('{{bin/php}} .../bin/console'): use `{{bin/console}} ...`,
@@ -60,4 +63,16 @@ task('database:migrate', function () {
 
 // the database settings come from the shared .env.local
 before('deploy:symlink', 'database:migrate');
+
+// Deployer's deploy:cache:clear only runs with --no-scripts: composer's auto-scripts already clear the cache during
+// deploy:vendors, but that is before deploy:build-frontend
+desc('Clear the cache after the frontend build');
+task('deploy:cache:clear-after-build', function () {
+    if (!frontendBuildOnHost()) {
+        return;
+    }
+
+    run('cd {{release_or_current_path}} && {{bin/console}} cache:clear {{console_options}}');
+});
+after('deploy:build-frontend', 'deploy:cache:clear-after-build');
 // endregion
