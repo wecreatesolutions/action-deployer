@@ -16,7 +16,8 @@ use Utils\ProjectUtils;
  *   host('keyplan-batch.prod.wecreatesolutions.nl')->setLabels(['stage' => 'production', 'role' => 'batch'])->...;
  *
  * Options (set() in the project deploy.php), next to the ones of recipes/wcs.php:
- * - dotenv_dump                (default false) true runs `dotenv:dump` after the vendors
+ * - dotenv_dump                (default false) true runs `dotenv:dump <APP_ENV>` after the vendors, with the APP_ENV of
+ *                                              shared/.env.local (the deploy stops when it has none)
  * - messenger_setup_transports (default: true when messenger_systemd_unit is set) messenger:setup-transports after
  *                                              the migration (the transport DSN only auto-creates the table in dev)
  * - messenger_systemd_unit     (default null)  e.g. 'keyplan-messenger@*': graceful consumer restart after the symlink
@@ -59,9 +60,14 @@ set('messenger_setup_transports', function () {
 });
 set('messenger_restart_roles', []);
 
-// APP_ENV of the shared .env.local on the server, for the deploy log
+// APP_ENV of the shared .env.local on the server ('' when it has none)
+set('shared_app_env', function () {
+    return run("grep -E '^APP_ENV=' {{deploy_path}}/shared/.env.local 2>/dev/null | tail -n 1 | cut -d= -f2- | tr -d \"'\\\"\" || true");
+});
+
+// for the deploy log
 set('app_env', function () {
-    $appEnv = run("grep -E '^APP_ENV=' {{deploy_path}}/shared/.env.local 2>/dev/null | tail -n 1 | cut -d= -f2- | tr -d \"'\\\"\" || true");
+    $appEnv = get('shared_app_env');
 
     return $appEnv !== '' ? $appEnv : 'unknown (no APP_ENV in shared/.env.local)';
 });
@@ -117,9 +123,18 @@ task('deploy:cache:warmup', function () {
 
 desc('Dump env');
 task('deploy:dump-env', function () {
-    if (get('dotenv_dump')) {
-        run('cd {{release_path}} && {{bin/console}} dotenv:dump');
+    if (!get('dotenv_dump')) {
+        return;
     }
+
+    // always pass the env: without it dotenv:dump uses the default env of the command (prod in sef-core), and the
+    // .env.local.php it writes wins over the .env.local, so a staging host would run with APP_ENV=prod
+    $appEnv = get('shared_app_env');
+    if (preg_match('/^[A-Za-z0-9_-]+$/', $appEnv) !== 1) {
+        throw new \RuntimeException(sprintf('dotenv_dump: no valid APP_ENV in %s/shared/.env.local (found "%s")', get('deploy_path'), $appEnv));
+    }
+
+    run(sprintf('cd {{release_path}} && {{bin/console}} dotenv:dump %s', $appEnv));
 });
 after('deploy:vendors', 'deploy:dump-env');
 

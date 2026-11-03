@@ -1,3 +1,9 @@
+# v2.0.7
+* waf: `dotenv_dump` passes the APP_ENV of `shared/.env.local` to `dotenv:dump` (`dotenv:dump staging`). Since 2.0.4 it
+  ran without an env, so the command used its default (prod in sef-core): the `.env.local.php` it writes wins over the
+  `.env.local`, so a staging host ran with APP_ENV=prod (found on bouwmeester-bouwcloud staging, QA #246). The deploy
+  stops when `shared/.env.local` has no valid APP_ENV, instead of dumping a wrong env
+
 # v2.0.6
 * waf: `deploy:messenger-restart` no longer warns "messenger:stop-workers failed" on every deploy: Deployer's `test()`
   compares the whole output with its marker, so the `[OK]` line of stop-workers counted as a failure. stop-workers and
