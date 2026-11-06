@@ -1,3 +1,14 @@
+# v2.0.9
+* messenger for symfony too: the options `messenger_systemd_unit`, `messenger_restart_roles`,
+  `messenger_setup_transports` and the tasks `deploy:messenger-restart` (after deploy:symlink) and
+  `deploy:messenger-setup-transports` moved from waf.php to the shared recipes/wcs.php, so a Symfony project only needs
+  `set('messenger_systemd_unit', '<app>-messenger@*');` (agileview-api, kaart #95)
+* waf: unchanged behaviour, `messenger_setup_transports` stays true when a unit is set; setup-transports is now its own
+  task after deploy:migrate (still skipped on batch hosts)
+* symfony: `messenger_setup_transports` defaults to false (transport table via a doctrine migration), when true it runs
+  after database:migrate
+* docs: user units of the deploy user need lingering (`loginctl enable-linger <user>`)
+
 # v2.0.8
 * symfony: the cache is cleared (and warmed up) again after `deploy:build-frontend`. The `cache:clear` of the composer
   scripts runs during deploy:vendors, before the build, so e.g. the vite entrypoints (pentatrion_vite `cache: true`) were

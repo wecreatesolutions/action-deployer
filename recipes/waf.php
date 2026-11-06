@@ -2,7 +2,6 @@
 
 namespace Deployer;
 
-use Deployer\Exception\RunException;
 use Utils\ProjectUtils;
 
 /*
@@ -18,10 +17,8 @@ use Utils\ProjectUtils;
  * Options (set() in the project deploy.php), next to the ones of recipes/wcs.php:
  * - dotenv_dump                (default false) true runs `dotenv:dump <APP_ENV>` after the vendors, with the APP_ENV of
  *                                              shared/.env.local (the deploy stops when it has none)
- * - messenger_setup_transports (default: true when messenger_systemd_unit is set) messenger:setup-transports after
- *                                              the migration (the transport DSN only auto-creates the table in dev)
- * - messenger_systemd_unit     (default null)  e.g. 'keyplan-messenger@*': graceful consumer restart after the symlink
- * - messenger_restart_roles    (default [])    only restart the consumers on hosts with one of these role labels, e.g. ['batch']
+ * - messenger_setup_transports (default: true when messenger_systemd_unit is set) see recipes/wcs.php, together with
+ *                                              messenger_systemd_unit and messenger_restart_roles
  *
  * The migration runs on one host only: hosts with role label `batch` skip it.
  * assets:install is not part of the recipe: the composer scripts of the project run it during deploy:vendors
@@ -54,11 +51,10 @@ set('console_options', function () {
 set('composer_options', '--verbose --prefer-dist --no-progress --no-dev --optimize-autoloader'); // removed --no-interaction ~ we like to see more info :) - Deployer 7+ adds {{composer_action}} itself
 
 set('dotenv_dump', false);
-set('messenger_systemd_unit', null);
+// waf: the transport DSN only auto-creates the table in dev
 set('messenger_setup_transports', function () {
     return get('messenger_systemd_unit') !== null;
 });
-set('messenger_restart_roles', []);
 
 // APP_ENV of the shared .env.local on the server ('' when it has none)
 set('shared_app_env', function () {
@@ -96,10 +92,6 @@ task(
         }
 
         run('cd {{release_path}} && {{bin/console}} waf:migration:migrate');
-
-        if (get('messenger_setup_transports')) {
-            run('cd {{release_path}} && {{bin/console}} messenger:setup-transports');
-        }
     }
 );
 
@@ -138,36 +130,7 @@ task('deploy:dump-env', function () {
 });
 after('deploy:vendors', 'deploy:dump-env');
 
-// region messenger consumers
-// graceful: a running messenger:consume worker finishes its current message and exits, systemd restarts it on the
-// new release. the systemd unit is provisioned on the host, not by this deploy.
-desc('Restart messenger consumers');
-task('deploy:messenger-restart', function () {
-    $unit = get('messenger_systemd_unit');
-    if ($unit === null) {
-        return;
-    }
-
-    $restartRoles = get('messenger_restart_roles');
-    if ($restartRoles !== [] && !hostHasRole($restartRoles)) {
-        return;
-    }
-
-    // run() + catch instead of test(): Deployer's test() compares the whole output with its marker, so a command that
-    // prints something (stop-workers prints an [OK] line) would always count as failed
-    try {
-        run('cd {{release_path}} && {{bin/console}} messenger:stop-workers');
-    } catch (RunException $exception) {
-        warning(sprintf('messenger:stop-workers failed on %s: %s', currentHost()->getAlias(), trim($exception->getErrorOutput() ?: $exception->getOutput())));
-    }
-    try {
-        run(sprintf("systemctl --user restart '%s'", $unit));
-    } catch (RunException $exception) {
-        warning(sprintf('could not restart %s on %s: the consumers may still run the previous release (%s)', $unit, currentHost()->getAlias(), trim($exception->getErrorOutput() ?: $exception->getOutput())));
-    }
-});
-after('deploy:symlink', 'deploy:messenger-restart');
-// endregion
+after('deploy:migrate', 'deploy:messenger-setup-transports');
 
 task(
     'deploy',

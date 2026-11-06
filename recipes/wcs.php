@@ -2,6 +2,8 @@
 
 namespace Deployer;
 
+use Deployer\Exception\RunException;
+
 /*
  * Shared deploy config of the WCS recipes (waf.php, symfony.php), Deployer 8. Not meant to be required by a project
  * deploy.php directly.
@@ -19,6 +21,19 @@ namespace Deployer;
  * - php_fpm_service           (default from bin/php, e.g. 'php8.4-fpm') reloaded after the symlink so the opcache does
  *                                             not serve the previous release, skipped when it does not run on the
  *                                             host; null to skip
+ * - messenger_systemd_unit     (default null)  systemd user unit of the messenger consumers on the host, e.g.
+ *                                             'keyplan-messenger@*': after the symlink `messenger:stop-workers` and
+ *                                             `systemctl --user restart '<unit>'` (the real restart: stop-workers only
+ *                                             reaches the old consumer when the restart-signal cache is shared, the
+ *                                             cache is per release); a failure only gives a warning. The unit is
+ *                                             provisioned on the host, not by the deploy; a user unit of the deploy user
+ *                                             needs lingering (`loginctl enable-linger <user>`), else it does not start
+ *                                             after a reboot and stops with the last session of that user
+ * - messenger_restart_roles    (default [])    only restart the consumers on hosts with one of these role labels, e.g. ['batch']
+ * - messenger_setup_transports (default: waf true when messenger_systemd_unit is set, symfony false)
+ *                                             `messenger:setup-transports` after the migration, not on hosts with role
+ *                                             label `batch`; symfony projects usually create the transport table with a
+ *                                             doctrine migration (auto_setup=0), so they only turn it on when needed
  *
  * Environment of the deployment workflow:
  * - NODE_AUTH_TOKEN: needed when the project .npmrc reads ${NODE_AUTH_TOKEN} (private @wecreatesolutions npm packages).
@@ -73,6 +88,9 @@ set('frontend_build_command', 'npm run build');
 set('php_fpm_service', function () {
     return basename(get('bin/php')) . '-fpm';
 });
+set('messenger_systemd_unit', null);
+set('messenger_restart_roles', []);
+set('messenger_setup_transports', false);
 set('node_auth_token', function () {
     $nodeAuthToken = getenv('NODE_AUTH_TOKEN');
 
@@ -146,6 +164,47 @@ task('deploy:php-fpm-reload', function () {
     run(sprintf('systemctl reload %s', $service));
 });
 after('deploy:symlink', 'deploy:php-fpm-reload');
+// endregion
+
+// region messenger consumers
+// hook it after the migration of the recipe (waf: deploy:migrate, symfony: database:migrate)
+desc('Set up the messenger transports');
+task('deploy:messenger-setup-transports', function () {
+    if (!get('messenger_setup_transports') || hostHasRole(['batch'])) {
+        return;
+    }
+
+    run('cd {{release_path}} && {{bin/console}} messenger:setup-transports');
+});
+
+// graceful: a running messenger:consume worker finishes its current message and exits, systemd restarts it on the
+// new release. the systemd unit is provisioned on the host, not by this deploy.
+desc('Restart messenger consumers');
+task('deploy:messenger-restart', function () {
+    $unit = get('messenger_systemd_unit');
+    if ($unit === null) {
+        return;
+    }
+
+    $restartRoles = get('messenger_restart_roles');
+    if ($restartRoles !== [] && !hostHasRole($restartRoles)) {
+        return;
+    }
+
+    // run() + catch instead of test(): Deployer's test() compares the whole output with its marker, so a command that
+    // prints something (stop-workers prints an [OK] line) would always count as failed
+    try {
+        run('cd {{release_path}} && {{bin/console}} messenger:stop-workers');
+    } catch (RunException $exception) {
+        warning(sprintf('messenger:stop-workers failed on %s: %s', currentHost()->getAlias(), trim($exception->getErrorOutput() ?: $exception->getOutput())));
+    }
+    try {
+        run(sprintf("systemctl --user restart '%s'", $unit));
+    } catch (RunException $exception) {
+        warning(sprintf('could not restart %s on %s: the consumers may still run the previous release (%s)', $unit, currentHost()->getAlias(), trim($exception->getErrorOutput() ?: $exception->getOutput())));
+    }
+});
+after('deploy:symlink', 'deploy:messenger-restart');
 // endregion
 
 /**

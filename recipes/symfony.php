@@ -19,6 +19,9 @@ use Utils\ProjectUtils;
  *   from a missing build
  * - database:migrate (doctrine migrations) runs before the symlink, not on hosts with role label `batch`; hook project
  *   migrations after it, e.g. after('database:migrate', 'tenants-database:migrate');
+ * - messenger (see recipes/wcs.php): set('messenger_systemd_unit', 'agileview-messenger@*') restarts the consumers
+ *   after the symlink; messenger_setup_transports defaults to false (transport table via a doctrine migration), when
+ *   set to true it runs after database:migrate
  * - {{bin/console}} already contains php in Deployer 8 ('{{bin/php}} .../bin/console'): use `{{bin/console}} ...`,
  *   never `{{bin/php}} {{bin/console}}` (php would print the console script instead of running it)
  * - shared_dirs default var/log, shared_files .env.local, writable_dirs var, var/cache, var/log, var/sessions
@@ -63,6 +66,7 @@ task('database:migrate', function () {
 
 // the database settings come from the shared .env.local
 before('deploy:symlink', 'database:migrate');
+after('database:migrate', 'deploy:messenger-setup-transports');
 
 // Deployer's deploy:cache:clear only runs with --no-scripts: composer's auto-scripts already clear the cache during
 // deploy:vendors, but that is before deploy:build-frontend
