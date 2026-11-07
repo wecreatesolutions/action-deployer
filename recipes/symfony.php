@@ -17,6 +17,10 @@ use Utils\ProjectUtils;
  * - the cache is cleared (and warmed up) again after the frontend build: the cache:clear of the composer scripts runs
  *   during deploy:vendors, before the build, so e.g. the vite entrypoints (pentatrion_vite cache: true) would be cached
  *   from a missing build
+ * - asset_map_compile (default: true when the release has an importmap.php, AssetMapper) runs
+ *   `asset-map:compile` after the frontend build and before the symlink, so the new release serves its compiled
+ *   assets (public/assets) right away; not on hosts with role label `batch`. Run a tailwind/sass build that the
+ *   AssetMapper needs first via frontend_build_command
  * - database:migrate (doctrine migrations) runs before the symlink, not on hosts with role label `batch`; hook project
  *   migrations after it, e.g. after('database:migrate', 'tenants-database:migrate');
  * - messenger (see recipes/wcs.php): set('messenger_systemd_unit', 'agileview-messenger@*') restarts the consumers
@@ -46,6 +50,10 @@ set(
 );
 // endregion
 
+set('asset_map_compile', function () {
+    return test('[ -f {{release_path}}/importmap.php ]');
+});
+
 // region tasks
 // composer auth for private packages
 before('deploy:vendors', 'composer-set-auth');
@@ -68,11 +76,23 @@ task('database:migrate', function () {
 before('deploy:symlink', 'database:migrate');
 after('database:migrate', 'deploy:messenger-setup-transports');
 
+// AssetMapper: compile before the symlink (and before the cache clear below), the new release is complete when it
+// goes live
+desc('Compile the AssetMapper assets');
+task('deploy:asset-map-compile', function () {
+    if (!assetMapCompileOnHost()) {
+        return;
+    }
+
+    run('cd {{release_or_current_path}} && {{bin/console}} asset-map:compile {{console_options}}');
+});
+after('deploy:build-frontend', 'deploy:asset-map-compile');
+
 // Deployer's deploy:cache:clear only runs with --no-scripts: composer's auto-scripts already clear the cache during
 // deploy:vendors, but that is before deploy:build-frontend
-desc('Clear the cache after the frontend build');
+desc('Clear the cache after the frontend build / asset-map:compile');
 task('deploy:cache:clear-after-build', function () {
-    if (!frontendBuildOnHost()) {
+    if (!frontendBuildOnHost() && !assetMapCompileOnHost()) {
         return;
     }
 
@@ -80,3 +100,11 @@ task('deploy:cache:clear-after-build', function () {
 });
 after('deploy:build-frontend', 'deploy:cache:clear-after-build');
 // endregion
+
+/**
+ * Whether asset-map:compile runs on the current host (asset_map_compile, not on batch hosts)
+ */
+function assetMapCompileOnHost(): bool
+{
+    return get('asset_map_compile') && !hostHasRole(['batch']);
+}

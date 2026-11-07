@@ -1,3 +1,9 @@
+# v2.0.10
+* symfony: option `asset_map_compile` (default: true when the release has an `importmap.php`, AssetMapper) runs
+  `asset-map:compile` in the new task `deploy:asset-map-compile`, after the frontend build and before the symlink, not on
+  batch hosts; the cache is cleared afterwards (`deploy:cache:clear-after-build` now also runs when the assets were
+  compiled). Replaces an own task `after('deploy', 'asset-map:compile')`, which ran after the symlink (automation)
+
 # v2.0.9
 * messenger for symfony too: the options `messenger_systemd_unit`, `messenger_restart_roles`,
   `messenger_setup_transports` and the tasks `deploy:messenger-restart` (after deploy:symlink) and
