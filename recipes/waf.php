@@ -17,8 +17,10 @@ use Utils\ProjectUtils;
  * Options (set() in the project deploy.php), next to the ones of recipes/wcs.php:
  * - dotenv_dump                (default false) true runs `dotenv:dump <APP_ENV>` after the vendors, with the APP_ENV of
  *                                              shared/.env.local (the deploy stops when it has none)
- * - messenger_setup_transports (default: true when messenger_systemd_unit is set) see recipes/wcs.php, together with
- *                                              messenger_systemd_unit and messenger_restart_roles
+ * - messenger_setup_transports (default: true when messenger_systemd_unit is set for the project or the host) see
+ *                                              recipes/wcs.php, together with messenger_systemd_unit and
+ *                                              messenger_restart_roles; a host without consumers can set the unit to
+ *                                              null, it still runs setup-transports with the migration
  *
  * The migration runs on one host only: hosts with role label `batch` skip it.
  * assets:install is not part of the recipe: the composer scripts of the project run it during deploy:vendors
@@ -51,9 +53,11 @@ set('console_options', function () {
 set('composer_options', '--verbose --prefer-dist --no-progress --no-dev --optimize-autoloader'); // removed --no-interaction ~ we like to see more info :) - Deployer 7+ adds {{composer_action}} itself
 
 set('dotenv_dump', false);
-// waf: the transport DSN only auto-creates the table in dev
+// waf: the transport DSN only auto-creates the table in dev. Follows the project unit, not the host value: a web host
+// with ->set('messenger_systemd_unit', null) (no consumers there) still sets up the transports, the batch host never
+// runs the migration
 set('messenger_setup_transports', function () {
-    return get('messenger_systemd_unit') !== null;
+    return Deployer::get()->config->get('messenger_systemd_unit') !== null || get('messenger_systemd_unit') !== null;
 });
 
 // APP_ENV of the shared .env.local on the server ('' when it has none)

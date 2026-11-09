@@ -1,3 +1,8 @@
+# v2.0.11
+* waf: `messenger_setup_transports` defaults to true when `messenger_systemd_unit` is set for the project (or the host),
+  no longer only on the host itself. A web host with `->set('messenger_systemd_unit', null)` (no consumers) next to a
+  batch host (no migration) ran setup-transports nowhere (keyplan)
+
 # v2.0.10
 * symfony: option `asset_map_compile` (default: true when the release has an `importmap.php`, AssetMapper) runs
   `asset-map:compile` in the new task `deploy:asset-map-compile`, after the frontend build and before the symlink, not on
