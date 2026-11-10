@@ -12,9 +12,12 @@ use Deployer\Exception\RunException;
  * - frontend_build            (default true)  false when the project has no frontend or builds it in an own task
  * - frontend_build_skip_roles (default ['batch']) hosts with one of these role labels get no frontend build (a batch
  *                                             server only runs workers)
- * - node_version              (default: null when the release has an .nvmrc, else '22') installed and used with nvm for
- *                                             the frontend build; null uses the .nvmrc of the release
- * - npm_install_command       (default 'npm install')
+ * - node_version              (default: null when the release has an .nvmrc, else the version in its .node-version,
+ *                                             else '22') installed and used with nvm for the frontend build; null uses
+ *                                             the .nvmrc of the release (nvm does not read .node-version itself)
+ * - npm_install_command       (default 'npm ci' when the release has a package-lock.json, else 'npm install') npm ci
+ *                                             installs exactly the lock (the tree QA tested) and fails when the lock
+ *                                             and package.json differ; yarn projects set their own command
  * - frontend_build_command    (default 'npm run build')
  * - bin/composer              (default: the first of /usr/local/bin/composer2, /usr/bin/composer,
  *                                             /usr/local/bin/composer, `command -v composer`) run with bin/php
@@ -79,11 +82,26 @@ set('bin/composer', function () {
 
 set('frontend_build', true);
 set('frontend_build_skip_roles', ['batch']);
-// the .nvmrc of the project wins, '22' only when it has none
+// the .nvmrc of the project wins (nvm reads it), then .node-version (Vite+ / platform-tooling), '22' only when it has none
 set('node_version', function () {
-    return test('[ -f {{release_path}}/.nvmrc ]') ? null : '22';
+    if (test('[ -f {{release_path}}/.nvmrc ]')) {
+        return null;
+    }
+    if (test('[ -f {{release_path}}/.node-version ]')) {
+        $version = ltrim(trim(run('head -n 1 {{release_path}}/.node-version')), 'v');
+        if (preg_match('/^[0-9][0-9.]*$/', $version) !== 1) {
+            throw new \RuntimeException(sprintf('.node-version of the release has no valid node version (found "%s")', $version));
+        }
+
+        return $version;
+    }
+
+    return '22';
 });
-set('npm_install_command', 'npm install');
+// npm ci with a lock: the exact tree of the lock (as QA), fails when it is out of sync instead of rewriting it
+set('npm_install_command', function () {
+    return test('[ -f {{release_path}}/package-lock.json ]') ? 'npm ci' : 'npm install';
+});
 set('frontend_build_command', 'npm run build');
 set('php_fpm_service', function () {
     return basename(get('bin/php')) . '-fpm';

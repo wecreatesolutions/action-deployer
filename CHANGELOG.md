@@ -1,3 +1,11 @@
+# v2.0.12
+* `node_version` also reads the `.node-version` of the release (after `.nvmrc`, before the default `'22'`): Vite+ /
+  platform-tooling pin node there, nvm does not read it, so such a project was built with node 22 (keyplan)
+* `npm_install_command` defaults to `npm ci` when the release has a `package-lock.json` (else `npm install`): the deploy
+  installs exactly the locked tree that QA tested and fails when the lock and package.json are out of sync, instead of
+  rewriting the lock on the server. Checked with `npm ci --dry-run`: agileview, automation, bouwmeester and
+  service-engine are in sync; yarn projects (keyplan) set their own command
+
 # v2.0.11
 * waf: `messenger_setup_transports` defaults to true when `messenger_systemd_unit` is set for the project (or the host),
   no longer only on the host itself. A web host with `->set('messenger_systemd_unit', null)` (no consumers) next to a
