@@ -2,7 +2,7 @@
 
 Docker image to deploy WCS projects with [Deployer 8](https://deployer.org/docs/8.x) from a GitHub Actions job.
 
-- Image: `ghcr.io/wecreatesolutions/action-deployer:<version>-8.4.27-cli-alpine` (PHP 8.4.27, Deployer 8.0.5), see `deploy.env` and `CHANGELOG.md`
+- Image: `ghcr.io/wecreatesolutions/action-deployer:<version>-8.4.28-cli-alpine` (PHP 8.4.28, Deployer 8.0.5), see `deploy.env` and `CHANGELOG.md`
 - Recipes: `recipes/waf.php` (SEF/WAF projects) and `recipes/symfony.php` (Symfony projects), both on the shared `recipes/wcs.php`
 - The Deployer 6 recipes (`sef.php`, `wab-symfony.php`, ...) only exist in the 1.x images (`wimwinterberg/action-deployer:1.1.20-7.4-cli-alpine`)
 
@@ -23,7 +23,7 @@ jobs:
     runs-on: self-hosted
 
     container:
-      image: ghcr.io/wecreatesolutions/action-deployer:2.0.5-8.4.27-cli-alpine
+      image: ghcr.io/wecreatesolutions/action-deployer:2.0.13-8.4.28-cli-alpine
 
     steps:
       - name: Deploy

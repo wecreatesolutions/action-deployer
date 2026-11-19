@@ -1,3 +1,6 @@
+# v2.0.13
+* php 8.4.28 (was 8.4.27): base image `php:8.4.28-cli-alpine`
+
 # v2.0.12
 * `node_version` also reads the `.node-version` of the release (after `.nvmrc`, before the default `'22'`): Vite+ /
   platform-tooling pin node there, nvm does not read it, so such a project was built with node 22 (keyplan)

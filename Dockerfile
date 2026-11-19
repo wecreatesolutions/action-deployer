@@ -1,6 +1,6 @@
 # Deploys WCS projects with Deployer 8 from a GitHub Actions job: `container: image: ghcr.io/wecreatesolutions/action-deployer:<version>`
 # with `run: deploy.sh` (see README.md)
-FROM php:8.4.27-cli-alpine
+FROM php:8.4.28-cli-alpine
 
 # links the ghcr.io package to this repository
 LABEL org.opencontainers.image.source=https://github.com/wecreatesolutions/action-deployer
