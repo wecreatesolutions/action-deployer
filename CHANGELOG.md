@@ -1,3 +1,9 @@
+# v2.0.14
+* `keep_releases` per stage: a staging host keeps only the current release (`keep_releases_staging`, default 1), a
+  production host keeps 5 (`keep_releases_production`, default 5). A rollback on staging is a re-run of the workflow run
+  of the previous deploy. A project or host can set either option, or `keep_releases` itself for a fixed number.
+  Staging hosts remove their older (Deployer 8) releases at their next deploy
+
 # v2.0.13
 * php 8.4.28 (was 8.4.27): base image `php:8.4.28-cli-alpine`
 

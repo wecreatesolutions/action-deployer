@@ -23,7 +23,7 @@ jobs:
     runs-on: self-hosted
 
     container:
-      image: ghcr.io/wecreatesolutions/action-deployer:2.0.13-8.4.28-cli-alpine
+      image: ghcr.io/wecreatesolutions/action-deployer:2.0.14-8.4.28-cli-alpine
 
     steps:
       - name: Deploy
@@ -82,7 +82,8 @@ The app environment (`APP_ENV`) comes from the shared `.env.local` on the server
 - waf: `assets:install`, `waf:migration:migrate`, cache clear/warmup, optional messenger.
   symfony: Deployer's `recipe/symfony.php` with `database:migrate` before the symlink.
 - Graceful `systemctl reload` of php-fpm after the symlink (clears the opcache), when it runs on the host.
-- Keeps 5 releases; the first Deployer 8 deploy continues the release numbering of Deployer 6. Releases made by
+- Keeps 1 release on staging and 5 on production (`keep_releases_staging` / `keep_releases_production`, or
+  `keep_releases` for a fixed number); the first Deployer 8 deploy continues the release numbering of Deployer 6. Releases made by
   Deployer 6 are not cleaned up by Deployer 8: remove them once by hand.
 - Production: GitHub release of the app version with the changelog of that version, tagged on the deployed commit.
 - Slack notifications when `SLACK_WEBHOOK_TOKEN` is set.

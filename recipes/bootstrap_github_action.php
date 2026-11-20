@@ -109,8 +109,14 @@ set(
 // Deployer 7+ defaults to false, Deployer 6 was recursive
 set('writable_recursive', true);
 
-// Deployer 8 keeps 10 releases, Deployer 6 kept 5 (vendor and node_modules per release)
-set('keep_releases', 5);
+// Deployer 8 keeps 10 releases, Deployer 6 kept 5 (vendor and node_modules per release). Per stage: a staging host
+// only keeps the current release (rollback = re-run the workflow run of the previous deploy), production keeps 5 for
+// `dep rollback`. A project or host can set keep_releases_staging / keep_releases_production, or keep_releases itself.
+set('keep_releases_staging', 1);
+set('keep_releases_production', 5);
+set('keep_releases', function () {
+    return get('stage') === 'production' ? get('keep_releases_production') : get('keep_releases_staging');
+});
 
 // clear HOME
 // https://github.com/deployphp/deployer/blob/master/src/Support/Unix.php - parseHomeDir uses HOME which is overridden by github

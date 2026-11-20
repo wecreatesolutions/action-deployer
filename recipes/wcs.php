@@ -37,6 +37,11 @@ use Deployer\Exception\RunException;
  *                                             `messenger:setup-transports` after the migration, not on hosts with role
  *                                             label `batch`; symfony projects usually create the transport table with a
  *                                             doctrine migration (auto_setup=0), so they only turn it on when needed
+ * - keep_releases_staging      (default 1)    releases kept on a host with label stage=staging: only the current one,
+ *                                             a rollback is a re-run of the workflow run of the previous deploy
+ * - keep_releases_production   (default 5)    releases kept on a host with label stage=production (`dep rollback`)
+ * - keep_releases              (default: one of the two above, from the stage label of the host) set it in the project
+ *                                             or on a host to use one fixed number
  *
  * Environment of the deployment workflow:
  * - NODE_AUTH_TOKEN: needed when the project .npmrc reads ${NODE_AUTH_TOKEN} (private @wecreatesolutions npm packages).
