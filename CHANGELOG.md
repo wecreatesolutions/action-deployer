@@ -1,3 +1,11 @@
+# v2.0.15
+* waf: new task `deploy:migrate-after` for expand/contract migrations (e.g. dropping a table the previous release still
+  writes to): `waf:migration:migrate --after` (waf-framework >= 7.15.0) after the symlink, the php-fpm reload and the
+  messenger restart, so the previous release no longer serves requests or consumes messages. Only when the release has
+  `application/utils/migration/migrations-after.php`, not on batch hosts. Option `migrate_after_delay` (default 5 s)
+  lets running requests of the previous release finish first. A failure leaves the new release live and fails the
+  deploy; the next deploy runs the after-migrations again, so they must be idempotent (service-engine, keyplan)
+
 # v2.0.14
 * `keep_releases` per stage: a staging host keeps only the current release (`keep_releases_staging`, default 1), a
   production host keeps 5 (`keep_releases_production`, default 5). A rollback on staging is a re-run of the workflow run

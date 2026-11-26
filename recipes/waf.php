@@ -21,8 +21,14 @@ use Utils\ProjectUtils;
  *                                              recipes/wcs.php, together with messenger_systemd_unit and
  *                                              messenger_restart_roles; a host without consumers can set the unit to
  *                                              null, it still runs setup-transports with the migration
+ * - migrate_after_delay        (default 5)     seconds deploy:migrate-after waits before `waf:migration:migrate --after`,
+ *                                              so requests that still run the previous release can finish (0 = no wait)
  *
  * The migration runs on one host only: hosts with role label `batch` skip it.
+ * After-migrations (expand/contract): when the release has application/utils/migration/migrations-after.php,
+ * deploy:migrate-after runs `waf:migration:migrate --after` after the symlink, the php-fpm reload and the messenger
+ * restart (not on batch hosts). A failure leaves the new release live; they run again with the next deploy, so they
+ * must be idempotent (e.g. DROP TABLE IF EXISTS).
  * assets:install is not part of the recipe: the composer scripts of the project run it during deploy:vendors
  * (`post-install-cmd` / `auto-scripts-waf`, with `--install-new-ui` for projects with the new ui).
  */
@@ -53,6 +59,7 @@ set('console_options', function () {
 set('composer_options', '--verbose --prefer-dist --no-progress --no-dev --optimize-autoloader'); // removed --no-interaction ~ we like to see more info :) - Deployer 7+ adds {{composer_action}} itself
 
 set('dotenv_dump', false);
+set('migrate_after_delay', 5);
 // waf: the transport DSN only auto-creates the table in dev. Follows the project unit, not the host value: a web host
 // with ->set('messenger_systemd_unit', null) (no consumers there) still sets up the transports, the batch host never
 // runs the migration
@@ -135,6 +142,34 @@ task('deploy:dump-env', function () {
 after('deploy:vendors', 'deploy:dump-env');
 
 after('deploy:migrate', 'deploy:messenger-setup-transports');
+
+// expand/contract: migrations that may only run when the previous release no longer runs (e.g. dropping a table the
+// old code still writes to). Runs after the symlink, the php-fpm reload and the messenger restart (on all hosts, as
+// Deployer finishes a task on every host before the next one), only when the release has migrations-after.php (an app
+// with that file has a waf-framework with `waf:migration:migrate --after`). A failure leaves the new release live and
+// fails the deploy; the next deploy runs the after-migrations again, so they must be idempotent.
+desc('Running the after-migrations (after the switch to the new release)');
+task('deploy:migrate-after', function () {
+    if (hostHasRole(['batch'])) {
+        return;
+    }
+
+    if (!test('[ -f {{release_path}}/application/utils/migration/migrations-after.php ]')) {
+        return;
+    }
+
+    // the php-fpm reload is graceful: let requests that still run the previous release finish
+    $delay = (int)get('migrate_after_delay');
+    if ($delay > 0) {
+        writeln(sprintf('waiting %d s for requests of the previous release', $delay));
+        run(sprintf('sleep %d', $delay));
+    }
+
+    run('cd {{release_path}} && {{bin/console}} waf:migration:migrate --after');
+});
+// after deploy:messenger-restart (wcs.php hooks the php-fpm reload and then the messenger restart after the symlink),
+// so the old consumers are stopped too; a failed restart only gives a warning there and the after-migrations still run
+after('deploy:messenger-restart', 'deploy:migrate-after');
 
 task(
     'deploy',
